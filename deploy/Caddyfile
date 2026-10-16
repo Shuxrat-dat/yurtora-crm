@@ -1,6 +1,17 @@
-# Reverse-proxy: HTTPS sertifikatini Caddy o'zi oladi va yangilaydi ({$DOMAIN} — .env dagi DOMAIN).
+# Reverse-proxy: Yurtora asosiy domeni va barcha markaz manzillari (<nom>.ROOT_DOMAIN).
+# HTTPS sertifikati har bir manzil uchun birinchi so'rovda olinadi (on-demand TLS), lekin faqat
+# /_tls/check/ ruxsat bergan manzillar uchun: Yurtora domeni va ro'yxatdan o'tgan faol markazlar.
 # Haqiqiy mijoz IP si X-Forwarded-For orqali Django ga uzatiladi.
-{$DOMAIN} {
+{
+	on_demand_tls {
+		ask http://web:8000/_tls/check/
+	}
+}
+
+https:// {
+	tls {
+		on_demand
+	}
 	encode gzip zstd
 	reverse_proxy web:8000
 	header {
@@ -11,4 +22,8 @@
 		output stdout
 		format console
 	}
+}
+
+http:// {
+	redir https://{host}{uri} permanent
 }

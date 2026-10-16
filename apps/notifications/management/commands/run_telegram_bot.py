@@ -13,7 +13,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import Error as DatabaseError
 from django.db import close_old_connections, connection
 
-from apps.notifications import digest, services, telegram
+from apps.notifications import routing, telegram
 
 logger = logging.getLogger(__name__)
 
@@ -84,8 +84,7 @@ class Command(BaseCommand):
     def _send_pending(self):
         """Navbatdagi eslatmalarni yuboradi; navbatda yana xabar qolgan bo'lsa True."""
         try:
-            services.process_pending_notifications()
-            return services.pending_count() > 0
+            return routing.send_pending_everywhere()  # har bir markaz navbati
         except DatabaseError:
             logger.exception("Navbatdagi xabarlar: ma'lumotlar bazasi xatosi")
             if not connection.in_atomic_block:
@@ -96,7 +95,7 @@ class Command(BaseCommand):
 
     def _weekly_digest(self):
         try:
-            digest.maybe_send_weekly_digest()
+            routing.weekly_digest_everywhere()
         except DatabaseError:
             logger.exception("Haftalik ro'yxat: ma'lumotlar bazasi xatosi")
             if not connection.in_atomic_block:
@@ -108,9 +107,9 @@ class Command(BaseCommand):
         """True — update qayta ishlandi (yoki qayta ishlab bo'lmaydi); False — BD xatosi, qayta urinish kerak."""
         try:
             if "callback_query" in update:
-                digest.handle_callback(update["callback_query"])
+                routing.handle_callback(update["callback_query"])
                 return True
-            reply = services.handle_update(update)
+            reply = routing.handle_update(update)
             if reply:
                 telegram.send_message(*reply)
         except telegram.TelegramError as exc:

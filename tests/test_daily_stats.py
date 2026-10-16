@@ -22,6 +22,7 @@ from apps.groups.models import Enrollment, Group
 from apps.schedule.models import Lesson, Room
 from apps.students.models import Student
 from apps.teachers.models import Teacher
+from apps.tenants.middleware import TENANCY_QUERIES_PER_REQUEST
 
 DAY = date(2026, 3, 10)
 OLD = date(2026, 1, 1)
@@ -254,7 +255,7 @@ class TestDailyStatsView:
 
     def test_query_count_is_bounded(self, client, director_user, world, django_assert_max_num_queries):
         client.force_login(director_user)
-        with django_assert_max_num_queries(12):
+        with django_assert_max_num_queries(12 + TENANCY_QUERIES_PER_REQUEST):
             client.get(reverse(self.url), self.params)
 
 

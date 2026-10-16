@@ -23,15 +23,27 @@ DEBUG = env.bool("DEBUG", default=False)
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 
 # Application definition
-INSTALLED_APPS = [
-    "django.contrib.admin",
-    "django.contrib.auth",
+# Multi-tenant (django-tenants): har bir o'quv markazi o'z PostgreSQL sxemasida.
+# SHARED_APPS — "public" sxemada (markazlar ro'yxati, Yurtora xodimlari, ommaviy sayt).
+# TENANT_APPS — har bir markaz sxemasida (butun CRM: foydalanuvchilar, o'quvchilar, to'lovlar...).
+SHARED_APPS = [
+    "django_tenants",
+    "apps.tenants.apps.TenantsConfig",
     "django.contrib.contenttypes",
+    "django.contrib.auth",
+    "apps.accounts.apps.AccountsConfig",
+    "django.contrib.admin",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    # Mahalliy ilovalar
+]
+TENANT_APPS = [
+    "django.contrib.contenttypes",
+    "django.contrib.auth",
     "apps.accounts.apps.AccountsConfig",
+    "django.contrib.admin",
+    "django.contrib.sessions",
+    "django.contrib.messages",
     "apps.students.apps.StudentsConfig",
     "apps.teachers.apps.TeachersConfig",
     "apps.courses.apps.CoursesConfig",
@@ -42,8 +54,19 @@ INSTALLED_APPS = [
     "apps.core.apps.CoreConfig",
     "apps.notifications.apps.NotificationsConfig",
 ]
+INSTALLED_APPS = SHARED_APPS + [app for app in TENANT_APPS if app not in SHARED_APPS]
+
+TENANT_MODEL = "tenants.Center"
+TENANT_DOMAIN_MODEL = "tenants.Domain"
+DATABASE_ROUTERS = ("django_tenants.routers.TenantSyncRouter",)
+PUBLIC_SCHEMA_URLCONF = "config.urls_public"
+# search_path faqat sxema almashganda o'rnatiladi (har so'rovdan oldin emas)
+TENANT_LIMIT_SET_CALLS = True
+# Yurtora asosiy domeni: markazlar <nom>.ROOT_DOMAIN manzilida (lokalda: ilm.localhost:8000)
+ROOT_DOMAIN = env.str("ROOT_DOMAIN", default="localhost")
 
 MIDDLEWARE = [
+    "apps.tenants.middleware.CenterMiddleware",  # birinchi: manzil bo'yicha markaz sxemasini tanlaydi
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -70,6 +93,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "apps.core.context_processors.asset_version",
                 "apps.core.context_processors.branding",
+                "apps.tenants.views.root_domain",
             ],
         },
     },
@@ -80,18 +104,19 @@ ASGI_APPLICATION = "config.asgi.application"
 
 # Database
 # Standart: DATABASE_URL (masalan: postgres://user:password@db:5432/yurtora_crm)
-# Faqat TEST_DB=sqlite ko'rsatilgandagina testlar uchun SQLite ruxsat etiladi
-if env.str("TEST_DB", default="").lower() == "sqlite":
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": ":memory:",
-        }
+# Faqat PostgreSQL: markazlar alohida sxemalarda (SQLite'da sxema yo'q)
+DATABASES = {
+    "default": env.db("DATABASE_URL"),
+}
+DATABASES["default"]["ENGINE"] = "django_tenants.postgresql_backend"
+
+# Kesh kalitlari markaz sxemasi bilan boshlanadi: bir markaz keshi boshqasiga aralashmaydi
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "KEY_FUNCTION": "django_tenants.cache.make_key",
     }
-else:
-    DATABASES = {
-        "default": env.db("DATABASE_URL"),
-    }
+}
 
 # Кастомная модель пользователя
 AUTH_USER_MODEL = "accounts.User"

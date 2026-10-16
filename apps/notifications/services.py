@@ -35,8 +35,11 @@ def create_link_token(student, user=None):
 
 
 def deep_link(token):
+    """Bitta Yurtora boti: havolada markaz kodi bor (routing.payload_for)."""
+    from .routing import payload_for
+
     username = settings.TELEGRAM_BOT_USERNAME.lstrip("@")
-    return f"https://t.me/{username}?start={token.token}" if username else ""
+    return f"https://t.me/{username}?start={payload_for(token.token)}" if username else ""
 
 
 def link_chat(token_value, chat_id, username=""):

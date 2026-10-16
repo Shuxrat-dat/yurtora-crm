@@ -4,12 +4,13 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import pytest
+from django.db import connection
 from django.urls import reverse
 
 from apps.courses.models import Course
 from apps.finance.services import add_adjustment
 from apps.groups.models import Group
-from apps.notifications import digest, services, telegram
+from apps.notifications import digest, routing, services, telegram
 from apps.notifications.models import (
     AdminChat,
     DebtDigest,
@@ -83,18 +84,17 @@ def callback(chat_id, data, chat_type="private"):
 
 def test_admin_link_flow(admin_user, configured):
     token = digest.create_admin_token(admin_user)
-    assert digest.admin_deep_link(token).endswith(f"?start=admin_{token.token}")
+    payload = f"{connection.schema_name}_admin_{token.token}"  # bitta bot: havolada markaz kodi
+    assert digest.admin_deep_link(token).endswith(f"?start={payload}")
 
-    update = {
-        "message": {"chat": {"id": 900, "type": "private"}, "text": f"/start admin_{token.token}"}
-    }
-    chat_id, reply = services.handle_update(update)
+    update = {"message": {"chat": {"id": 900, "type": "private"}, "text": f"/start {payload}"}}
+    chat_id, reply = routing.handle_update(update)
     assert chat_id == 900 and admin_user.username in reply
     assert AdminChat.objects.get(chat_id=900).user == admin_user
     # bir marta ishlaydi
     assert digest.link_admin_chat(token.token, 901) is None
 
-    services.handle_update({"message": {"chat": {"id": 900, "type": "private"}, "text": "/stop"}})
+    routing.handle_update({"message": {"chat": {"id": 900, "type": "private"}, "text": "/stop"}})
     assert not AdminChat.objects.get(chat_id=900).is_active
 
 
@@ -105,7 +105,7 @@ def test_admin_chat_page_access(client, admin_user, teacher_user, configured):
     client.force_login(admin_user)
     assert client.get(url).status_code == 200
     resp = client.post(url)
-    assert "start=admin_" in resp.context["link"]
+    assert f"start={connection.schema_name}_admin_" in resp.context["link"]
 
 
 # --- ro'yxat ---------------------------------------------------------------

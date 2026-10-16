@@ -118,8 +118,10 @@ def test_concurrent_submits_with_same_key_create_one_payment(world):
         pytest.skip("Параллельный тест требует PostgreSQL")
     barrier = threading.Barrier(2)
     results = []
+    center = connection.tenant  # har bir oqim o'z ulanishini ochadi: markaz sxemasini o'rnatamiz
 
     def worker():
+        connection.set_tenant(center)
         try:
             barrier.wait()
             register_payment(world["student"], world["group"], 7000, "cash", None, date(2026, 10, 10), idempotency_key="race-1")

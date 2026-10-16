@@ -10,7 +10,11 @@ _CACHE_SECONDS = 60  # boshqa jarayonlar (gunicorn worker) yangi nomni ko'pi bil
 
 def center_name() -> str:
     """Joriy o'quv markazining nomi. Har sahifada so'rov bo'lmasligi uchun keshlanadi."""
-    name = cache.get(_CACHE_KEY)
+    from apps.tenants.services import is_public_schema
+
+    if is_public_schema():
+        return PRODUCT_NAME  # Yurtora ommaviy sahifalari: markaz yo'q
+    name = cache.get(_CACHE_KEY)  # kalit markaz sxemasi bilan (django_tenants.cache.make_key)
     if name is None:
         from apps.finance.models import ReceiptSettings
 

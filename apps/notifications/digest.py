@@ -55,7 +55,9 @@ def create_admin_token(user):
 
 def admin_deep_link(token):
     username = settings.TELEGRAM_BOT_USERNAME.lstrip("@")
-    return f"https://t.me/{username}?start={ADMIN_PREFIX}{token.token}" if username else ""
+    from .routing import payload_for
+
+    return f"https://t.me/{username}?start={payload_for(ADMIN_PREFIX + token.token)}" if username else ""
 
 
 def link_admin_chat(token_value, chat_id, username=""):
@@ -129,11 +131,13 @@ def digest_text(digest, rows, top=8):
 
 
 def digest_keyboard(digest, count):
+    from .routing import callback_for
+
     return {
         "inline_keyboard": [
             [
-                {"text": f"Yuborish ({count})", "callback_data": f"send:{digest.pk}"},
-                {"text": "Bekor qilish", "callback_data": f"cancel:{digest.pk}"},
+                {"text": f"Yuborish ({count})", "callback_data": callback_for("send", digest.pk)},
+                {"text": "Bekor qilish", "callback_data": callback_for("cancel", digest.pk)},
             ]
         ]
     }

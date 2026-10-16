@@ -75,9 +75,19 @@ def _field_values(instance):
     }
 
 
+def _in_center_schema() -> bool:
+    """Jurnal faqat markaz sxemasida bor: Yurtora ommaviy qismida (public) yozilmaydi."""
+    from django.db import connection
+    from django_tenants.utils import get_public_schema_name
+
+    return connection.schema_name != get_public_schema_name()
+
+
 def _write(action, instance=None, changes=None, user=None, username="", ip=None):
     from .models import AuditLog
 
+    if not _in_center_schema():
+        return
     ctx = _ctx()
     user = user or ctx.get("user")
     AuditLog.objects.create(
@@ -143,6 +153,8 @@ def _login_failed_flooded():
     from .models import AuditLog
 
     since = timezone.now() - timedelta(seconds=LOGIN_FAILED_WINDOW_SECONDS)
+    if not _in_center_schema():
+        return False
     return AuditLog.objects.filter(action="login_failed", created_at__gte=since).count() >= LOGIN_FAILED_MAX_PER_WINDOW
 
 

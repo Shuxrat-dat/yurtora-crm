@@ -3,6 +3,7 @@
 from datetime import timedelta
 
 import pytest
+from django.db import connection
 from django.urls import reverse
 from django.utils import timezone
 
@@ -58,7 +59,7 @@ def debtor(director_user):
 
 def test_link_token_flow_and_single_use(debtor, configured, admin_user):
     token = services.create_link_token(debtor, admin_user)
-    assert services.deep_link(token) == f"https://t.me/yurtora_test_bot?start={token.token}"
+    assert services.deep_link(token) == f"https://t.me/yurtora_test_bot?start={connection.schema_name}_{token.token}"
 
     assert services.link_chat(token.token, 555, "parent") == debtor
     assert TelegramContact.objects.filter(student=debtor, chat_id=555, is_active=True).exists()

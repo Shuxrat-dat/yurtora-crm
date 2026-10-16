@@ -4,7 +4,7 @@ import pytest
 from django.core.management import call_command
 from django.db import OperationalError
 
-from apps.notifications import digest, services, telegram
+from apps.notifications import digest, routing, services, telegram
 from apps.notifications.management.commands import run_telegram_bot as bot
 
 pytestmark = pytest.mark.django_db
@@ -33,7 +33,7 @@ class Harness:
         monkeypatch.setattr(telegram, "is_configured", lambda: True)
         monkeypatch.setattr(telegram, "get_updates", get_updates)
         monkeypatch.setattr(telegram, "send_message", lambda chat_id, text, **kw: self.sent.append((chat_id, text)))
-        monkeypatch.setattr(services, "handle_update", handle_update)
+        monkeypatch.setattr(routing, "handle_update", handle_update)
         monkeypatch.setattr(digest, "maybe_send_weekly_digest", lambda: None)
         monkeypatch.setattr(bot, "refresh_db_connection", refresh)
         monkeypatch.setattr(bot.time, "sleep", lambda s: self.sleeps.append(s))

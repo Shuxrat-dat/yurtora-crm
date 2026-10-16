@@ -1,0 +1,17 @@
+{% extends "public/base_public.html" %}
+{% block title %}Yurtora CRM: o'quv markazlari uchun tizim{% endblock %}
+{% block content %}
+<section style="display:grid;gap:1.25rem;max-width:44rem;padding:2rem 0 2.5rem">
+    <h1 style="margin:0;font:italic 800 clamp(2.4rem,6vw,4rem)/1 'Barlow Condensed',sans-serif;text-transform:uppercase">O'quv markazingiz bitta tizimda</h1>
+    <p style="margin:0;font-size:1.2rem;line-height:1.5;color:#3a3f58">O'quvchilar, guruhlar, dars jadvali, davomat, to'lov va chek, qarzdorlarga Telegram eslatma, kassa va ish haqi. To'liq o'zbek tilida.</p>
+    <div style="display:flex;flex-wrap:wrap;gap:.75rem">
+        <a href="{% url 'public:signup' %}" class="pub-btn pub-btn--main">Markazni ulash</a>
+    </div>
+</section>
+<section style="display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(14rem,1fr))">
+    <div class="pub-card"><h2 style="margin:0 0 .4rem;font-size:1.15rem">O'quvchilar va guruhlar</h2><p style="margin:0;color:#3a3f58">Karta, guruh, balans va davomat bitta joyda.</p></div>
+    <div class="pub-card"><h2 style="margin:0 0 .4rem;font-size:1.15rem">To'lov va chek</h2><p style="margin:0;color:#3a3f58">To'lovni qabul qiling, chekni termoprinterga chiqaring.</p></div>
+    <div class="pub-card"><h2 style="margin:0 0 .4rem;font-size:1.15rem">Qarzdorlar</h2><p style="margin:0;color:#3a3f58">Ota-onalarga eslatma Telegram orqali boradi.</p></div>
+    <div class="pub-card"><h2 style="margin:0 0 .4rem;font-size:1.15rem">Kassa va ish haqi</h2><p style="margin:0;color:#3a3f58">Kunlik kassa, oylik hisobot, o'qituvchi foizlari.</p></div>
+</section>
+{% endblock %}

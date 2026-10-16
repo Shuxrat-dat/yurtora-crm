@@ -22,7 +22,7 @@ cd yurtora-crm
 **Быстрый способ (рекомендуется):** скрипт сам создаёт `.env` с новыми случайными `SECRET_KEY` и паролем БД, ставит `DEBUG=False`, подставляет домен и права 600. Существующий `.env` не перезаписывает, секреты на экран не выводит.
 
 ```bash
-sh scripts/make_env.sh crm.example.uz
+sh scripts/make_env.sh yurtora.uz
 nano .env        # вписать TELEGRAM_BOT_TOKEN и TELEGRAM_BOT_USERNAME
 ```
 
@@ -39,9 +39,9 @@ nano .env
 |---|---|
 | `SECRET_KEY` | новая случайная строка: `python3 -c "import secrets; print(secrets.token_urlsafe(60))"` |
 | `DEBUG` | `False` |
-| `ALLOWED_HOSTS` | ваш домен, например `crm.example.uz` |
-| `CSRF_TRUSTED_ORIGINS` | `https://crm.example.uz` |
-| `DOMAIN` | `crm.example.uz` |
+| `ALLOWED_HOSTS` | `.yurtora.uz,web,localhost` (точка впереди: домен и все поддомены центров) |
+| `CSRF_TRUSTED_ORIGINS` | `https://yurtora.uz,https://*.yurtora.uz` |
+| `ROOT_DOMAIN` | `yurtora.uz` (центры на `<имя>.yurtora.uz`) |
 | `POSTGRES_PASSWORD` | новый пароль **только из букв и цифр** (он попадает в `DATABASE_URL`) |
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME` | токен вашего бота (из @BotFather); без него сервис `bot` не запустится |
 
@@ -99,3 +99,15 @@ docker compose -f docker-compose.prod.yml up -d --build
 - `.env`, базы, резервные копии, ключи и токены не хранятся в git (`.gitignore`).
 - После изменения шаблонов с новыми классами Tailwind нужно выполнить `sh tools/build_css.sh` и закоммитить `static/css/tailwind.css`; на сервере сборка CSS не выполняется.
 - Один экземпляр бота на один токен: не запускайте второй (локально и на сервере одновременно), Telegram вернёт конфликт.
+
+## Yurtora: несколько центров на одном сервере
+
+- DNS: две A-записи на IP сервера: `yurtora.uz` и `*.yurtora.uz` (wildcard).
+- HTTPS: Caddy получает сертификат для каждого адреса при первом заходе (on-demand), только для `yurtora.uz` и зарегистрированных активных центров (`/_tls/check/`).
+- Сотрудник Yurtora (админка `https://yurtora.uz/admin/`, список центров):
+  `docker compose -f docker-compose.prod.yml exec web python manage.py createsuperuser`
+- Новый центр: сам через `https://yurtora.uz/signup/` или командой
+  `docker compose -f docker-compose.prod.yml exec web python manage.py create_center ilm "Ilm Academy" director --phone "+998..."`
+- Демо-данные в центр (только dev): `python manage.py tenant_command seed_demo --schema=<имя>`.
+- Бот один на все центры: в ссылке привязки есть код центра.
+- Блокировка центра: в админке снять «Фаол» (данные сохраняются, вход закрыт).

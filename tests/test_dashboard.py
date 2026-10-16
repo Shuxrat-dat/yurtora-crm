@@ -13,6 +13,7 @@ from apps.groups.models import Enrollment, Group
 from apps.schedule.models import Lesson, Room, ScheduleSlot
 from apps.students.models import Student
 from apps.teachers.models import Teacher
+from apps.tenants.middleware import TENANCY_QUERIES_PER_REQUEST
 
 
 @pytest.fixture
@@ -448,7 +449,7 @@ class TestDashboardQueryOptimization:
         # Admin: 15 queries (session, user, operational metrics, occupancy, schedule grid).
         # Finance metrics (debtors, monthly income) are skipped for administrator.
         # This is optimized - no N+1 problems
-        with django_assert_num_queries(num=15, using="default"):
+        with django_assert_num_queries(num=15 + TENANCY_QUERIES_PER_REQUEST, using="default"):
             response = client.get(reverse("accounts:home"))
             assert response.status_code == 200
 
@@ -460,6 +461,6 @@ class TestDashboardQueryOptimization:
 
         # Teacher: 6 queries (session, user, teacher profile, lessons, schedule grid)
         # Much fewer than admin - no financial data
-        with django_assert_num_queries(num=6, using="default"):
+        with django_assert_num_queries(num=6 + TENANCY_QUERIES_PER_REQUEST, using="default"):
             response = client.get(reverse("accounts:home"))
             assert response.status_code == 200

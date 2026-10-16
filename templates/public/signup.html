@@ -1,0 +1,27 @@
+{% extends "public/base_public.html" %}
+{% block title %}Markazni ulash — Yurtora CRM{% endblock %}
+{% block top_action %}{% endblock %}
+{% block content %}
+<div style="display:grid;gap:1.5rem;grid-template-columns:repeat(auto-fit,minmax(18rem,1fr));align-items:start">
+    <div style="display:grid;gap:.75rem">
+        <h1 style="margin:0;font:italic 800 2.4rem/1.05 'Barlow Condensed',sans-serif;text-transform:uppercase">Markazni ulash</h1>
+        <p style="margin:0;color:#3a3f58;line-height:1.5">Ma'lumotlarni kiriting: markazingiz uchun alohida manzil va direktor akkaunti yaratiladi. Har bir markaz ma'lumotlari boshqalardan to'liq ajratilgan.</p>
+    </div>
+    <form method="post" class="pub-card" style="display:grid;gap:1rem" novalidate data-once>
+        {% csrf_token %}
+        {% if form.non_field_errors %}<div class="pub-error" role="alert">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+        {% for field in form %}
+        <div class="pub-field">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {% if field.name == "subdomain" %}
+            <div style="display:flex;align-items:center;gap:.4rem">{{ field }}<span style="white-space:nowrap;font-weight:600">.{{ ROOT_DOMAIN }}</span></div>
+            {% else %}{{ field }}{% endif %}
+            {% if field.help_text %}<span class="pub-help">{{ field.help_text }}</span>{% endif %}
+            {% for e in field.errors %}<span class="pub-error">{{ e }}</span>{% endfor %}
+        </div>
+        {% endfor %}
+        <button type="submit" class="pub-btn pub-btn--main">Markazni yaratish</button>
+        <p class="pub-help" style="margin:0">Yaratish bir necha soniya davom etadi.</p>
+    </form>
+</div>
+{% endblock %}

@@ -4,6 +4,8 @@ import pytest
 from django.test import Client
 from django.urls import reverse
 
+from apps.tenants.middleware import TENANCY_QUERIES_PER_REQUEST
+
 
 @pytest.mark.django_db
 class TestFinanceViews:
@@ -132,7 +134,7 @@ class TestFinanceViews:
         # 3. Group.objects.filter(pk__in=...)
         # + запросы для auth, session, etc.
         # Ожидаем не более 10 запросов (с запасом)
-        with self.assertNumQueries(10):
+        with self.assertNumQueries(10 + TENANCY_QUERIES_PER_REQUEST):
             response = self.client.get(reverse("finance:debtors_list"))
             assert response.status_code == 200
 

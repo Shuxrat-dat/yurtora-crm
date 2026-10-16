@@ -835,8 +835,12 @@ class ConcurrentAccrueTestCase(TransactionTestCase):
         """Test that concurrent accrue_lesson_charges creates only one charge."""
         results = []
         errors = []
+        from django.db import connection
+
+        center = connection.tenant  # oqim yangi ulanish ochadi: markaz sxemasini o'rnatamiz
 
         def try_accrue():
+            connection.set_tenant(center)
             try:
                 entries = accrue_lesson_charges(self.lesson)
                 results.append(len(entries))

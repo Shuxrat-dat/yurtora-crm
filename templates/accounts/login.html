@@ -21,6 +21,11 @@
             <h1>Tizimga kirish</h1>
             <p class="mv-login-hint">Login va parolingizni kiriting.</p>
 
+            {% if request.GET.welcome and not form.errors %}
+            <div class="mv-alert mv-alert--success mt-5" role="status">
+                Markazingiz tayyor. Ro'yxatdan o'tishda kiritgan direktor logini va paroli bilan kiring.
+            </div>
+            {% endif %}
             {% if form.errors %}
             <div class="mv-alert mv-alert--error mt-5" role="alert">
                 Login yoki parol noto'g'ri. Qayta tekshirib kiriting.

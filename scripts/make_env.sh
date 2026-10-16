@@ -1,16 +1,16 @@
 #!/bin/sh
 # Создаёт серверный .env из .env.example с НОВЫМИ случайными секретами (SECRET_KEY, пароль БД).
 #
-#   sh scripts/make_env.sh crm.example.uz
+#   sh scripts/make_env.sh yurtora.uz
 #
-# Что делает: подставляет домен в ALLOWED_HOSTS / CSRF_TRUSTED_ORIGINS / DOMAIN, генерирует SECRET_KEY и пароль БД
+# Что делает: подставляет домен в ALLOWED_HOSTS / CSRF_TRUSTED_ORIGINS / ROOT_DOMAIN (+ все поддомены центров), генерирует SECRET_KEY и пароль БД
 # (только буквы и цифры: он попадает в DATABASE_URL), ставит DEBUG=False, права 600.
 # Токен Telegram-бота нужно вписать вручную (он выдаётся в @BotFather и нигде не хранится в репозитории).
 # Существующий .env не перезаписывается. Сами секреты на экран не выводятся.
 set -eu
 
 DOMAIN="${1:-}"
-[ -n "$DOMAIN" ] || { echo "Использование: sh scripts/make_env.sh <домен, например crm.example.uz>" >&2; exit 2; }
+[ -n "$DOMAIN" ] || { echo "Использование: sh scripts/make_env.sh <домен, например yurtora.uz>" >&2; exit 2; }
 cd "$(dirname "$0")/.."
 [ -f .env.example ] || { echo "Не найден .env.example" >&2; exit 2; }
 [ ! -e .env ] || { echo ".env уже существует: удалите или переименуйте его, если хотите создать новый." >&2; exit 1; }
@@ -33,14 +33,14 @@ db_password = "".join(secrets.choice(alphabet) for _ in range(32))
 values = {
     "SECRET_KEY": secrets.token_urlsafe(60),
     "DEBUG": "False",
-    "ALLOWED_HOSTS": domain,
+    "ALLOWED_HOSTS": f".{domain},web,localhost",
     "POSTGRES_PASSWORD": db_password,
     "POSTGRES_HOST": "db",
     "DATABASE_URL": f"postgres://yurtora_user:{db_password}@db:5432/yurtora_crm",
 }
 extra = {
-    "CSRF_TRUSTED_ORIGINS": f"https://{domain}",
-    "DOMAIN": domain,
+    "CSRF_TRUSTED_ORIGINS": f"https://{domain},https://*.{domain}",
+    "ROOT_DOMAIN": domain,
 }
 replace = {**values, **extra}
 

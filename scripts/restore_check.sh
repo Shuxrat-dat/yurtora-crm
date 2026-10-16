@@ -36,12 +36,16 @@ check() {  # check <nom> <SQL>
     fail=1
   fi
 }
-check "o'quvchilar" "SELECT count(*) FROM students_student"
-check "guruhlar" "SELECT count(*) FROM groups_group"
-check "a'zoliklar" "SELECT count(*) FROM groups_enrollment"
-check "foydalanuvchilar" "SELECT count(*) FROM accounts_user"
-check "kitob yozuvlari" "SELECT count(*) FROM finance_ledgerentry"
-check "kitob yig'indisi (so'm)" "SELECT coalesce(sum(amount),0) FROM finance_ledgerentry"
+# Har bir markaz o'z sxemasida (django-tenants): markazlar ro'yxati va har bir markaz ma'lumotlari solishtiriladi.
+# Sxema nomlari faqat harf va raqamdan iborat (ro'yxatdan o'tishda tekshiriladi), shuning uchun so'rovga xavfsiz qo'yiladi.
+check "markazlar" "SELECT count(*) FROM public.tenants_center"
+for s in $($PSQL -d "$POSTGRES_DB" -c "SELECT schema_name FROM public.tenants_center WHERE schema_name <> 'public' ORDER BY 1"); do
+  check "$s: o'quvchilar" "SELECT count(*) FROM \"$s\".students_student"
+  check "$s: guruhlar" "SELECT count(*) FROM \"$s\".groups_group"
+  check "$s: foydalanuvchilar" "SELECT count(*) FROM \"$s\".accounts_user"
+  check "$s: kitob yozuvlari" "SELECT count(*) FROM \"$s\".finance_ledgerentry"
+  check "$s: kitob yig'indisi (so'm)" "SELECT coalesce(sum(amount),0) FROM \"$s\".finance_ledgerentry"
+done
 
 if [ "$fail" -eq 0 ]; then
   echo "[restore-check] MUVAFFAQIYATLI: zaxira tiklandi va asosiy baza bilan mos"
