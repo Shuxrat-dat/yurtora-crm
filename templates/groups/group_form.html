@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}
+{% if form.instance.pk %}Guruh ma'lumotlarini tahrirlash{% else %}Yangi guruh yaratish{% endif %} — Yurtora CRM
+{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="bg-white p-6 sm:p-8 rounded-xl shadow-sm border border-slate-200">
+        <div class="mb-6 pb-4 border-b border-slate-100 flex items-center justify-between">
+            <h1 class="text-xl font-bold text-slate-900">
+                {% if form.instance.pk %}Guruh ma'lumotlarini tahrirlash{% else %}Yangi guruh yaratish{% endif %}
+            </h1>
+            <a href="{% if form.instance.pk %}{% url 'groups:group_detail' form.instance.pk %}{% else %}{% url 'groups:group_list' %}{% endif %}" class="text-sm text-slate-500 hover:text-slate-800">
+                Bekor qilish
+            </a>
+        </div>
+
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+
+            {% if form.errors %}
+            <div class="p-4 bg-red-50 text-red-700 rounded-lg text-sm border border-red-200">
+                <p class="font-semibold">Iltimos, kiritilgan ma'lumotlarni tekshiring:</p>
+                <ul class="list-disc list-inside mt-1">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <li>{{ field.label }}: {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Guruh nomi *</label>
+                    {{ form.name }}
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Kurs *</label>
+                        {{ form.course }}
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">O'qituvchi *</label>
+                        {{ form.teacher }}
+                    </div>
+                </div>
+                {% if form.teacher_percent %}
+                <div>
+                    <label for="{{ form.teacher_percent.id_for_label }}" class="block text-xs font-semibold text-slate-700 mb-1">O'qituvchi foizi (%), alohida</label>
+                    {{ form.teacher_percent }}
+                    <p class="text-xs text-slate-500 mt-1">Agar foiz ko'rsatilmasa, o'qituvchi profilidagi asosiy foiz ishlatiladi. 0 yozilsa, shu guruh uchun aynan 0% bo'ladi. Faqat direktor ko'radi.</p>
+                    <p class="text-xs mt-1" data-percent-hint></p>
+                    {{ teacher_base_percents|json_script:"teacher-base-percents" }}
+                    <script>
+                        (() => {
+                            // Bo'sh maydon uchun qaysi foiz qo'llanishini ko'rsatadi (tanlangan o'qituvchi profilidan)
+                            const bases = JSON.parse(document.getElementById('teacher-base-percents').textContent);
+                            const teacher = document.getElementById('{{ form.teacher.id_for_label }}');
+                            const input = document.getElementById('{{ form.teacher_percent.id_for_label }}');
+                            const hint = document.querySelector('[data-percent-hint]');
+                            const sync = () => {
+                                if (input.value !== '') { hint.textContent = `Qo'llanadi: ${input.value}% (alohida)`; hint.className = 'text-xs mt-1 text-slate-700'; return; }
+                                const base = bases[teacher.value];
+                                if (base === undefined || base === null) { hint.textContent = "Diqqat: o'qituvchi profilida asosiy foiz yo'q. Foiz belgilanmaguncha ish haqi hisoblanmaydi."; hint.className = 'text-xs mt-1 text-red-700 font-semibold'; }
+                                else { hint.textContent = `Qo'llanadi: ${base}% (o'qituvchi profilidan)`; hint.className = 'text-xs mt-1 text-slate-700'; }
+                            };
+                            teacher.addEventListener('change', sync); input.addEventListener('input', sync); sync();
+                        })();
+                    </script>
+                    {% for e in form.teacher_percent.errors %}<p class="text-sm text-red-700 mt-1">{{ e }}</p>{% endfor %}
+                </div>
+                {% endif %}
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Maksimal o'quvchilar soni *</label>
+                        {{ form.max_students }}
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Holati *</label>
+                        {{ form.status }}
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Boshlanish sanasi *</label>
+                        {{ form.start_date }}
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Tugash sanasi</label>
+                        {{ form.end_date }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end space-x-3 pt-4 border-t border-slate-100">
+                <a href="{% if form.instance.pk %}{% url 'groups:group_detail' form.instance.pk %}{% else %}{% url 'groups:group_list' %}{% endif %}" class="px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition">
+                    Bekor qilish
+                </a>
+                <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg shadow-sm transition">
+                    Saqlash
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

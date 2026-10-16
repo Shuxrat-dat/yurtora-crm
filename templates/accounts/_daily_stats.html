@@ -1,0 +1,62 @@
+{% load mv %}
+<h3 class="mv-ds-title">O‘quv markazingizning kunlik statistikasi</h3>
+<p class="mv-ds-date">{{ stats.date|date:"d.m.Y" }}</p>
+
+{% if stats.finance %}
+<section class="mv-ds-section">
+    <h4 class="mv-ds-h">Jami tushum</h4>
+    <p class="mv-ds-total">{{ stats.finance.total|som }} so‘m</p>
+    <h4 class="mv-ds-h mv-ds-h--sub">To‘lov turlari</h4>
+    {% if stats.finance.total %}
+    <ul class="mv-ds-list">
+        {% for method in stats.finance.methods %}
+        <li class="mv-ds-row"><span>{{ method.label }}</span><strong>{{ method.amount|som }} so‘m</strong></li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="mv-ds-empty">Ma’lumot mavjud emas</p>
+    {% endif %}
+</section>
+{% endif %}
+
+<section class="mv-ds-section">
+    <div class="mv-ds-tiles">
+        <div class="mv-ds-tile">
+            <span class="mv-ds-tile-label">Kelmagan o‘quvchilar</span>
+            <span class="mv-ds-num mv-ds-num--red">{{ stats.attendance.absent_total }} ta</span>
+        </div>
+        <div class="mv-ds-tile">
+            <span class="mv-ds-tile-label">Davomat belgilanmagan</span>
+            <span class="mv-ds-num mv-ds-num--red">{{ stats.attendance.unmarked_total }} ta</span>
+        </div>
+    </div>
+
+    <h4 class="mv-ds-h mv-ds-h--sub">Guruhlar bo‘yicha davomat</h4>
+    {% if stats.attendance.rows %}
+    <ul class="mv-ds-list">
+        {% for row in stats.attendance.rows %}
+        <li class="mv-ds-row mv-ds-row--lesson">
+            <span class="mv-ds-lesson">
+                <span class="mv-ds-time">{{ row.start_time|time:"H:i" }}–{{ row.end_time|time:"H:i" }}</span>
+                <span class="mv-ds-group">{{ row.group }}</span>
+            </span>
+            <span class="mv-ds-counts">
+                <span>Kelmagan: <strong>{{ row.absent }} ta</strong></span>
+                {% if row.is_held %}<span>Belgilanmagan: <strong>{{ row.unmarked }} ta</strong></span>{% endif %}
+            </span>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="mv-ds-empty">Ma’lumot mavjud emas</p>
+    {% endif %}
+</section>
+
+{% if stats.new_students is not None %}
+<section class="mv-ds-section">
+    <div class="mv-ds-row mv-ds-row--plain">
+        <span class="mv-ds-h">Yangi o‘quvchilar</span>
+        <strong class="mv-ds-num">{{ stats.new_students }} ta</strong>
+    </div>
+</section>
+{% endif %}

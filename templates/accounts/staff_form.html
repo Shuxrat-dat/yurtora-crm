@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}{% if creating %}Yangi foydalanuvchi{% else %}Foydalanuvchini tahrirlash{% endif %} — Yurtora CRM{% endblock %}
+
+{% block content %}
+<div class="max-w-xl">
+    <a href="{% url 'accounts:staff_list' %}" class="text-sm text-indigo-600">&larr; Foydalanuvchilar</a>
+    <h1 class="mt-1 mb-5">{% if creating %}Yangi foydalanuvchi{% else %}{{ target.username }}{% endif %}</h1>
+
+    <form method="post" class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4" autocomplete="off">
+        {% csrf_token %}
+        {% if form.non_field_errors %}<div class="mv-alert mv-alert--error">{{ form.non_field_errors }}</div>{% endif %}
+
+        {% for field in form %}
+        <div data-field="{{ field.name }}">
+            {% if field.field.widget.input_type == 'checkbox' %}
+            <label class="flex items-center gap-2 text-sm font-medium">{{ field }} {{ field.label }}</label>
+            {% else %}
+            <label for="{{ field.id_for_label }}" class="block text-sm font-semibold text-slate-700 mb-1">{{ field.label }}</label>
+            {{ field }}
+            {% endif %}
+            {% if field.help_text %}<p class="text-xs text-slate-500 mt-1">{{ field.help_text }}</p>{% endif %}
+            {% for error in field.errors %}<p class="text-sm text-red-700 mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        {% endfor %}
+
+        {% if creating %}
+        <div class="flex items-center gap-3">
+            <button type="button" id="gen-pass" class="mv-btn">Tasodifiy parol yaratish</button>
+            <span id="gen-out" class="text-sm font-mono text-slate-700" aria-live="polite"></span>
+        </div>
+        <p class="text-xs text-slate-500">Parol kamida 8 belgi, faqat raqamlardan iborat bo'lmasligi va oddiy bo'lmasligi kerak. Parolni xodimga o'zingiz yetkazasiz: saqlangandan keyin uni qayta ko'rib bo'lmaydi.</p>
+        {% endif %}
+
+        <div class="flex justify-end gap-3 pt-3 border-t border-slate-100">
+            <a href="{% url 'accounts:staff_list' %}" class="mv-btn">Bekor qilish</a>
+            <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg">Saqlash</button>
+        </div>
+    </form>
+</div>
+
+{% if creating %}
+<script>
+(() => {
+    const role = document.getElementById('id_role');
+    const teacherFields = ['teacher', 'phone'].map(n => document.querySelector(`[data-field="${n}"]`));
+    const sync = () => teacherFields.forEach(f => { if (f) f.hidden = role.value !== 'teacher'; });
+    role.addEventListener('change', sync); sync();
+
+    document.getElementById('gen-pass').addEventListener('click', () => {
+        const alphabet = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        const bytes = crypto.getRandomValues(new Uint32Array(10));
+        const value = [...bytes].map(b => alphabet[b % alphabet.length]).join('');
+        for (const id of ['id_password1', 'id_password2']) {
+            const el = document.getElementById(id); el.value = value; el.type = 'text';
+        }
+        document.getElementById('gen-out').textContent = value;
+    });
+})();
+</script>
+{% endif %}
+{% endblock %}

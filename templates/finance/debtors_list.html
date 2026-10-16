@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% load mv %}
+
+{% block title %}Qarzdorlar — Yurtora CRM{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Sarlavha -->
+    <div class="flex items-center justify-between">
+        <h1 class="text-3xl font-bold text-slate-900">Qarzdorlar</h1>
+        <a href="{% url 'finance:debtors_export' %}?{{ request.GET.urlencode }}" 
+           class="mv-btn">
+            <svg class="mv-ico" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>CSV yuklab olish
+        </a>
+    </div>
+
+    <!-- Filtrlar -->
+    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <form method="get" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Guruh</label>
+                <select name="group" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <option value="">Barcha guruhlar</option>
+                    {% for group in groups %}
+                    <option value="{{ group.pk }}" {% if current_group == group.pk|stringformat:"s" %}selected{% endif %}>
+                        {{ group.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Qidiruv (ism, telefon)</label>
+                <input type="text" name="q" value="{{ current_q }}" 
+                       placeholder="Qidirish..." 
+                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <div class="flex items-end">
+                <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg shadow-sm transition w-full">
+                    Filtr
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Umumiy qarz -->
+    <div class="bg-red-50 border border-red-200 p-4 rounded-xl">
+        <div class="flex items-center justify-between">
+            <span class="text-sm font-semibold text-red-800">Umumiy qarz:</span>
+            <span class="text-2xl font-bold text-red-700">{{ total_debt|som }} so'm</span>
+        </div>
+    </div>
+
+    <!-- Jadval -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
+                <thead class="bg-slate-50 text-slate-600 font-semibold text-xs">
+                    <tr>
+                        <th class="px-4 py-3">O'quvchi</th>
+                        <th class="px-4 py-3">Guruh</th>
+                        <th class="px-4 py-3">Qarz</th>
+                        <th class="px-4 py-3">Telefon</th>
+                        <th class="px-4 py-3">Ota-ona tel</th>
+                        <th class="px-4 py-3 text-right">Amallar</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for d in debtors %}
+                    <tr class="hover:bg-slate-50">
+                        <td class="px-4 py-3">
+                            <a href="{% url 'students:student_detail' d.student.pk %}" class="font-semibold text-slate-900 hover:text-indigo-600">
+                                {{ d.student.full_name }}
+                            </a>
+                        </td>
+                        <td class="px-4 py-3">
+                            <a href="{% url 'groups:group_detail' d.group.pk %}" class="text-slate-700 hover:text-indigo-600">
+                                {{ d.group.name }}
+                            </a>
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="font-bold text-red-600">{{ d.balance|som }} so'm</span>
+                        </td>
+                        <td class="px-4 py-3 text-slate-600">{{ d.student.phone }}</td>
+                        <td class="px-4 py-3 text-slate-600">
+                            {% with d.student.student_guardians.all|first as sg %}
+                                {% if sg %}{{ sg.guardian.phone }}{% else %}—{% endif %}
+                            {% endwith %}
+                        </td>
+                        <td class="px-4 py-3 text-right">
+                            <a href="{% url 'students:student_detail' d.student.pk %}" 
+                               class="text-indigo-600 hover:text-indigo-800 text-xs font-semibold">
+                                To'lov qabul qilish
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="px-4 py-8 text-center text-slate-400">
+                            Qarzdorlar topilmadi
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div class="flex items-center justify-center space-x-2">
+        {% if page_obj.has_previous %}
+        <a href="?{% if querystring %}{{ querystring }}&{% endif %}page={{ page_obj.previous_page_number }}" 
+           class="px-3 py-1.5 bg-white border border-slate-300 rounded-md text-slate-700 hover:bg-slate-50 text-sm">
+            Oldingi
+        </a>
+        {% endif %}
+        <span class="text-sm text-slate-600">
+            Sahifa {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+        </span>
+        {% if page_obj.has_next %}
+        <a href="?{% if querystring %}{{ querystring }}&{% endif %}page={{ page_obj.next_page_number }}" 
+           class="px-3 py-1.5 bg-white border border-slate-300 rounded-md text-slate-700 hover:bg-slate-50 text-sm">
+            Keyingi
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

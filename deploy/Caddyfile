@@ -1,0 +1,14 @@
+# Reverse-proxy: HTTPS sertifikatini Caddy o'zi oladi va yangilaydi ({$DOMAIN} — .env dagi DOMAIN).
+# Haqiqiy mijoz IP si X-Forwarded-For orqali Django ga uzatiladi.
+{$DOMAIN} {
+	encode gzip zstd
+	reverse_proxy web:8000
+	header {
+		-Server
+		Strict-Transport-Security "max-age=31536000"
+	}
+	log {
+		output stdout
+		format console
+	}
+}

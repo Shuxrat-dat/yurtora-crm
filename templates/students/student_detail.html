@@ -1,0 +1,438 @@
+{% extends "base.html" %}
+{% load mv %}
+
+{% block title %}{{ student.full_name }} — Yurtora CRM{% endblock %}
+
+{% block content %}
+<div class="mv-card-layout">
+    <!-- ===== Chap: profil ===== -->
+    <aside class="mv-profile">
+        <div class="mv-profile-top">
+            {% if student.status == 'active' %}<span class="mv-pill mv-pill--ok">Faol</span>{% elif student.status == 'frozen' %}<span class="mv-pill mv-pill--cyan">Muzlatilgan</span>{% else %}<span class="mv-pill">Arxivlangan</span>{% endif %}
+            {% if user.role != 'teacher' and total_balance is not None %}
+            <span class="mv-balance {% if total_balance < 0 %}is-debt{% elif total_balance > 0 %}is-plus{% endif %}">{{ total_balance|som }} so'm</span>
+            {% endif %}
+        </div>
+        <div class="mv-profile-body">
+            <div class="flex items-center gap-3">
+                <div class="mv-initials">{{ student.first_name|first }}{{ student.last_name|first }}</div>
+                <div class="min-w-0">
+                    <h1 class="mv-profile-name">{{ student.full_name }}</h1>
+                    <p class="text-sm text-slate-500">ID: {{ student.pk }}</p>
+                </div>
+            </div>
+            {% if student.is_blacklisted %}
+            <div class="mv-alert mv-alert--error mt-4" role="alert">
+                <span>Qora ro'yxatda{% if student.blacklist_reason %}: {{ student.blacklist_reason }}{% endif %}</span>
+            </div>
+            {% endif %}
+            <dl class="mv-profile-list mt-4">
+                <div><dt>Telefon</dt><dd>{% if user.role != 'teacher' %}{{ student.phone }}{% else %}—{% endif %}</dd></div>
+                <div><dt>Tug'ilgan sana</dt><dd>{{ student.birth_date|date:"d.m.Y"|default:"—" }}</dd></div>
+                <div><dt>Jinsi</dt><dd>{{ student.get_gender_display|default:"—" }}</dd></div>
+                <div><dt>Maktab</dt><dd>{{ student.school|default:"—" }}</dd></div>
+                <div><dt>Manba</dt><dd>{{ student.get_source_display|default:"—" }}</dd></div>
+                <div><dt>Manzil</dt><dd>{{ student.address|default:"—" }}</dd></div>
+                <div><dt>Markazga kelgan</dt><dd>{{ student.joined_date|date:"d.m.Y" }}</dd></div>
+            </dl>
+        </div>
+
+        {% if can_manage_student %}
+        <div class="mv-profile-actions">
+            <button type="button" class="mv-btn mv-btn--primary" data-modal-open="enroll-modal">
+                <svg class="mv-ico" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+                Guruhga qo'shish
+            </button>
+            <button type="button" class="mv-btn" data-pay-student="{% url 'finance:payment_modal_form' student.pk %}">
+                <svg class="mv-ico" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg>
+                To'lov qilish
+            </button>
+            <a href="{% url 'students:student_edit' student.pk %}" class="mv-btn">Tahrirlash</a>
+            <a href="{% url 'notifications:student_telegram' student.pk %}" class="mv-btn">Telegram</a>
+            <form method="post" action="{% url 'students:student_status' student.pk %}" class="mv-status-form">
+                {% csrf_token %}
+                <label for="st-status">Holat</label>
+                <select name="status" id="st-status">
+                    <option value="active" {% if student.status == 'active' %}selected{% endif %}>Faol</option>
+                    <option value="archived" {% if student.status == 'archived' %}selected{% endif %}>Arxivlangan</option>
+                    <option value="frozen" {% if student.status == 'frozen' %}selected{% endif %}>Muzlatilgan</option>
+                </select>
+                <select name="archive_reason" aria-label="Arxivlash sababi">
+                    <option value="">Sabab (arxivlashda)</option>
+                    {% for value, label in archive_reasons %}
+                    <option value="{{ value }}" {% if student.archive_reason == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="mv-btn">Saqlash</button>
+            </form>
+        </div>
+        {% endif %}
+    </aside>
+
+    <!-- ===== O'ng: bo'limlar ===== -->
+    <section class="mv-card-main">
+        <nav class="mv-cardtabs" role="tablist" aria-label="O'quvchi bo'limlari">
+            <button type="button" role="tab" data-tab="groups">Guruhlar</button>
+            {% if user.role != 'teacher' %}<button type="button" role="tab" data-tab="payments">To'lovlar</button>{% endif %}
+            <button type="button" role="tab" data-tab="attendance">Davomat</button>
+            <button type="button" role="tab" data-tab="guardians">Ota-onasi</button>
+            <button type="button" role="tab" data-tab="notes">Izoh</button>
+            {% if user.role != 'teacher' %}<button type="button" role="tab" data-tab="history">Tarix</button>{% endif %}
+        </nav>
+
+        <!-- Guruhlar -->
+        <div data-panel="groups" role="tabpanel">
+            <div class="mv-monthbar mb-4">
+                <h2>{{ month_title }}<small>Darslar taqvimi</small></h2>
+                <div class="mv-monthnav">
+                    <a class="mv-btn" href="?month={{ prev_month }}#groups" aria-label="Oldingi oy"><svg class="mv-ico" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></a>
+                    <a class="mv-btn" href="?month={{ next_month }}#groups" aria-label="Keyingi oy"><svg class="mv-ico" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></a>
+                </div>
+            </div>
+            <div class="mv-gcards">
+                {% for e in card_enrollments %}
+                <article class="mv-gcard mv-tone-{{ e.group_id|tone }}{% if e.status == 'finished' %} is-finished{% endif %}">
+                    <header>
+                        <a href="{% url 'groups:group_detail' e.group.pk %}" class="mv-gcard-title">{{ e.group.name }}</a>
+                        {% if e.status == 'active' %}<span class="mv-pill mv-pill--ok">Faol</span>{% elif e.status == 'trial' %}<span class="mv-pill mv-pill--gold">Sinov</span>{% elif e.status == 'frozen' %}<span class="mv-pill mv-pill--cyan">Muzlatilgan</span>{% else %}<span class="mv-pill">Tugallangan</span>{% endif %}
+                        {% if user.role != 'teacher' and e.balance is not None %}
+                        <span class="mv-balance mv-balance--sm {% if e.balance < 0 %}is-debt{% elif e.balance > 0 %}is-plus{% endif %}">{{ e.balance|som }}</span>
+                        {% endif %}
+                    </header>
+                    <dl class="mv-gcard-info">
+                        <div><dt>Kurs</dt><dd>{{ e.group.course.name }}</dd></div>
+                        <div><dt>O'qituvchi</dt><dd>{{ e.group.teacher.full_name|default:"—" }}</dd></div>
+                        <div><dt>Dars vaqti</dt><dd>{{ e.schedule|default:"—" }}</dd></div>
+                        <div><dt>Boshlangan</dt><dd>{{ e.start_date|date:"d.m.Y"|default:"—" }}</dd></div>
+                        <div><dt>To'lov boshlanishi</dt><dd>{{ e.paid_from|date:"d.m.Y"|default:"Sinov (bepul)" }}</dd></div>
+                        <div><dt>Oylik narx</dt><dd>{{ e.group.course.monthly_price|som }} so'm</dd></div>
+                    </dl>
+
+                    <div class="mv-att">
+                        <div class="mv-att-counts">
+                            <span class="is-present">Keldi: {{ e.calendar.present }}</span>
+                            <span class="is-absent">Kelmadi: {{ e.calendar.absent }}</span>
+                            <span class="is-excused">Sababli: {{ e.calendar.excused }}</span>
+                            {% if e.calendar.unmarked %}<span class="is-unmarked">Belgilanmagan: {{ e.calendar.unmarked }}</span>{% endif %}
+                        </div>
+                        <div class="mv-att-days">
+                            {% for day in e.calendar.days %}
+                            {% if user.role != 'teacher' %}
+                            <a href="{% url 'schedule:lesson_detail' day.lesson.pk %}" class="mv-att-day is-{{ day.state }}" title="{{ day.lesson.date|date:'d.m.Y' }} {{ day.lesson.start_time|time:'H:i' }}: {{ day.label }}">{{ day.lesson.date|date:"d" }}</a>
+                            {% else %}
+                            <span class="mv-att-day is-{{ day.state }}" title="{{ day.lesson.date|date:'d.m.Y' }}: {{ day.label }}">{{ day.lesson.date|date:"d" }}</span>
+                            {% endif %}
+                            {% empty %}
+                            <p class="text-xs text-slate-500">Bu oyda dars yo'q.</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <footer>
+                        {% if e.status == 'active' %}
+                        <form method="post" action="{% url 'groups:group_freeze' e.group.pk e.pk %}">
+                            {% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}">
+                            <button type="submit" class="mv-btn">Muzlatish</button>
+                        </form>
+                        {% elif e.status == 'frozen' %}
+                        <form method="post" action="{% url 'groups:group_unfreeze' e.group.pk e.pk %}">
+                            {% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}">
+                            <button type="submit" class="mv-btn">Muzlatishni bekor qilish</button>
+                        </form>
+                        {% elif e.status == 'trial' and can_manage_student %}
+                        <form method="post" action="{% url 'groups:group_trial_convert' e.group.pk e.pk %}">
+                            {% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}">
+                            <button type="submit" class="mv-btn mv-btn--primary">Sinovdan o'tkazish</button>
+                        </form>
+                        {% endif %}
+                    </footer>
+                </article>
+                {% empty %}
+                <div class="mv-empty">
+                    <p class="font-semibold text-slate-700">Hech qanday guruhga a'zo emas.</p>
+                    {% if can_manage_student %}<button type="button" class="mv-btn mv-btn--primary mt-3" data-modal-open="enroll-modal">Guruhga qo'shish</button>{% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            <div class="mv-legend mt-3">
+                <span class="mv-att-key is-present">Keldi</span><span class="mv-att-key is-late">Kechikdi</span><span class="mv-att-key is-absent">Kelmadi</span>
+                <span class="mv-att-key is-excused">Sababli</span><span class="mv-att-key is-unmarked">Belgilanmagan</span><span class="mv-att-key is-upcoming">Kutilmoqda</span>
+            </div>
+        </div>
+
+        {% if user.role != 'teacher' %}
+        <!-- To'lovlar -->
+        <div data-panel="payments" role="tabpanel" hidden>
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-5">
+                {% if enrollments_with_balance %}
+                <div>
+                    <h2 class="text-lg font-bold mb-3">Guruhlar bo'yicha balans</h2>
+                    <div class="grid gap-2 sm:grid-cols-2">
+                        {% for item in enrollments_with_balance %}
+                        <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200">
+                            <div>
+                                <a href="{% url 'groups:group_detail' item.enrollment.group.pk %}" class="font-semibold text-slate-900">{{ item.enrollment.group.name }}</a>
+                                <span class="text-xs text-slate-500 block">{{ item.enrollment.group.course.name }}</span>
+                            </div>
+                            <span class="text-right">
+                                <span class="font-semibold {% if item.balance < 0 %}text-red-700{% elif item.balance > 0 %}text-emerald-700{% else %}text-slate-500{% endif %}">{{ item.balance|som }} so'm</span>
+                                {% if user.role == 'director' and item.balance > 0 %}<a href="{% url 'finance:refund' student.pk item.enrollment.group.pk %}" class="block text-xs font-semibold text-indigo-600">Pul qaytarish</a>{% endif %}
+                            </span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if payment_form and enrollments_with_balance %}
+                <div class="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                    <h3 class="text-base font-bold mb-3">To'lov qabul qilish</h3>
+                    <form method="post" action="" id="payment-form" class="space-y-3">
+                        {% csrf_token %}
+                        <input type="hidden" name="next" value="{{ request.path }}">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label for="payment-group-select" class="block text-xs font-semibold text-slate-600 mb-1">Guruh</label>
+                                <select name="group_id" id="payment-group-select" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm">
+                                    <option value="">Guruhni tanlang</option>
+                                    {% for item in enrollments_with_balance %}<option value="{{ item.enrollment.group.pk }}">{{ item.enrollment.group.name }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div><label class="block text-xs font-semibold text-slate-600 mb-1">Summa</label>{{ payment_form.amount }}</div>
+                            <div><label class="block text-xs font-semibold text-slate-600 mb-1">To'lov usuli</label>{{ payment_form.method }}</div>
+                            <div><label class="block text-xs font-semibold text-slate-600 mb-1">Sana</label>{{ payment_form.entry_date }}</div>
+                        </div>
+                        <div><label class="block text-xs font-semibold text-slate-600 mb-1">Izoh</label>{{ payment_form.comment }}</div>
+                        <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg">To'lovni saqlash</button>
+                    </form>
+                    <script>
+                        document.getElementById('payment-group-select').addEventListener('change', function () {
+                            const form = document.getElementById('payment-form');
+                            form.action = this.value ? `/finance/payment/create/{{ student.pk }}/${this.value}/` : '';
+                        });
+                    </script>
+                </div>
+                {% endif %}
+
+                <div>
+                    <div class="flex items-center justify-between gap-3 mb-3">
+                        <h2 class="text-lg font-bold">Moliyaviy tarix</h2>
+                        <select id="ledger-group-filter" aria-label="Guruh bo'yicha" class="px-3 py-1.5 text-sm border border-slate-300 rounded-lg">
+                            <option value="">Barcha guruhlar</option>
+                            {% for item in enrollments_with_balance %}<option value="{{ item.enrollment.group.pk }}">{{ item.enrollment.group.name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
+                            <thead class="bg-slate-50 text-slate-600 font-semibold text-xs">
+                                <tr><th class="px-3 py-2">Sana</th><th class="px-3 py-2">Turi</th><th class="px-3 py-2">Guruh</th><th class="px-3 py-2 text-right">Summa</th><th class="px-3 py-2">Izoh</th><th class="px-3 py-2"></th></tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                {% for entry in ledger_entries %}
+                                <tr data-ledger-group="{{ entry.group_id }}">
+                                    <td class="px-3 py-2 text-slate-600 text-xs whitespace-nowrap">{{ entry.entry_date|date:"d.m.Y" }}</td>
+                                    <td class="px-3 py-2">
+                                        {% if entry.kind == 'charge' %}<span class="mv-pill mv-pill--red">Dars hisobi</span>{% elif entry.kind == 'payment' %}<span class="mv-pill mv-pill--ok">To'lov</span>{% elif entry.kind == 'excused_credit' %}<span class="mv-pill mv-pill--cyan">Uzrli qaytarish</span>{% elif entry.kind == 'refund' %}<span class="mv-pill mv-pill--gold">Pul qaytarildi</span>{% else %}<span class="mv-pill mv-pill--gold">Tuzatish</span>{% endif %}
+                                    </td>
+                                    <td class="px-3 py-2 text-slate-700 text-xs">{{ entry.group.name }}</td>
+                                    <td class="px-3 py-2 text-right font-semibold whitespace-nowrap {% if entry.amount < 0 %}text-red-700{% else %}text-emerald-700{% endif %}">{% if entry.amount > 0 %}+{% endif %}{{ entry.amount|som }}</td>
+                                    <td class="px-3 py-2 text-slate-500 text-xs">{{ entry.comment|truncatewords:10 }}</td>
+                                    <td class="px-3 py-2 text-right whitespace-nowrap">
+                                        {% if entry.kind == 'payment' %}
+                                        <a href="{% url 'finance:receipt' entry.pk %}" target="_blank" class="text-indigo-600 text-xs font-semibold">Chek</a>
+                                        {% elif entry.kind == 'charge' and user.role == 'director' %}
+                                        <form method="post" action="{% url 'finance:excused_credit' entry.pk %}" class="inline">
+                                            {% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}">
+                                            <button type="submit" class="text-indigo-600 text-xs font-semibold" onclick="return confirm('Ushbu dars hisobi uchun uzrli sabab berilsinmi?')">Uzrli sabab</button>
+                                        </form>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="6" class="px-3 py-6 text-center text-slate-500 text-sm">Moliyaviy yozuvlar hali yo'q.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Davomat -->
+        <div data-panel="attendance" role="tabpanel" hidden>
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                {% if attendance_stats %}
+                <div class="mv-stats" style="grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr))">
+                    <div class="mv-stat mv-stat--ok"><span class="mv-stat-top">Keldi</span><span class="mv-stat-value">{{ attendance_stats.present }}</span></div>
+                    <div class="mv-stat mv-stat--gold"><span class="mv-stat-top">Kechikdi</span><span class="mv-stat-value">{{ attendance_stats.late }}</span></div>
+                    <div class="mv-stat mv-stat--red"><span class="mv-stat-top">Kelmadi</span><span class="mv-stat-value">{{ attendance_stats.absent }}</span></div>
+                    <div class="mv-stat mv-stat--steel"><span class="mv-stat-top">Sababli</span><span class="mv-stat-value">{{ attendance_stats.excused }}</span></div>
+                    <div class="mv-stat"><span class="mv-stat-top">Davomat</span><span class="mv-stat-value">{{ attendance_stats.percent }}%</span></div>
+                </div>
+                <p class="text-xs text-slate-500 mt-3">Jami o'tilgan: {{ attendance_stats.total }} dars</p>
+                {% else %}
+                <p class="text-sm text-slate-500">Davomat ma'lumoti hali yo'q.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Ota-onasi -->
+        <div data-panel="guardians" role="tabpanel" hidden>
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4">
+                {% for sg in student.student_guardians.all %}
+                <div class="flex items-start justify-between p-4 bg-slate-50 rounded-lg border border-slate-200">
+                    <div>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <h3 class="font-bold text-slate-900">{{ sg.guardian.full_name }}</h3>
+                            {% if sg.relation %}<span class="mv-pill">{{ sg.relation }}</span>{% endif %}
+                            {% if sg.is_primary %}<span class="mv-pill mv-pill--ok">Asosiy</span>{% endif %}
+                        </div>
+                        <p class="text-sm text-slate-600 mt-1">Telefon: <span class="font-medium text-slate-900">{% if user.role != 'teacher' %}{{ sg.guardian.phone }}{% else %}—{% endif %}</span></p>
+                        {% if sg.guardian.notes %}<p class="text-xs text-slate-500 mt-1">{{ sg.guardian.notes }}</p>{% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-sm text-slate-500">Ota-ona yoki vasiy kiritilmagan.</p>
+                {% endfor %}
+
+                {% if can_manage_student %}
+                <div class="pt-4 border-t border-slate-100">
+                    <h3 class="text-base font-bold mb-3">Vasiy qo'shish</h3>
+                    <form method="post" action="{% url 'students:guardian_add' student.pk %}" class="space-y-4">
+                        {% csrf_token %}
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div><label class="block text-xs font-semibold text-slate-600 mb-1">To'liq ismi</label>{{ guardian_form.full_name }}</div>
+                            <div><label class="block text-xs font-semibold text-slate-600 mb-1">Telefon raqami</label>{{ guardian_form.phone }}</div>
+                            <div><label class="block text-xs font-semibold text-slate-600 mb-1">Qarindoshlik</label>{{ guardian_form.relation }}</div>
+                            <div class="flex items-center pt-6"><label class="flex items-center gap-2 text-sm text-slate-700">{{ guardian_form.is_primary }}<span class="font-medium">Asosiy aloqa shaxsi</span></label></div>
+                        </div>
+                        <div><label class="block text-xs font-semibold text-slate-600 mb-1">Eslatma</label>{{ guardian_form.notes }}</div>
+                        <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg">Vasiyni saqlash</button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Izoh -->
+        <div data-panel="notes" role="tabpanel" hidden>
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                <p class="text-slate-700 whitespace-pre-line">{{ student.notes|default:"Izoh yo'q." }}</p>
+                {% if can_manage_student %}<a href="{% url 'students:student_edit' student.pk %}#id_notes" class="mv-btn mt-4">Izohni tahrirlash</a>{% endif %}
+            </div>
+        </div>
+
+        {% if user.role != 'teacher' %}
+        <!-- Tarix -->
+        <div data-panel="history" role="tabpanel" hidden>
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                <ol class="mv-timeline">
+                    {% for item in history %}
+                    <li>
+                        <time>{{ item.at|date:"d.m.Y H:i" }}</time>
+                        <div><strong>{{ item.text }}</strong>{% if item.who %} <span class="text-slate-500">({{ item.who }})</span>{% endif %}</div>
+                        {% if item.details %}<div class="text-xs text-slate-500">{{ item.details }}</div>{% endif %}
+                    </li>
+                    {% empty %}
+                    <li class="text-sm text-slate-500">Hali o'zgarishlar qayd etilmagan.</li>
+                    {% endfor %}
+                </ol>
+            </div>
+        </div>
+        {% endif %}
+    </section>
+</div>
+
+{% if can_manage_student %}
+<!-- "Guruhga qo'shish" oynasi -->
+<div id="enroll-modal" class="mv-modal" hidden>
+    <div class="mv-modal-backdrop" data-modal-close></div>
+    <div class="mv-modal-card" role="dialog" aria-modal="true" aria-labelledby="enroll-title">
+        <div class="mv-modal-head">
+            <h2 id="enroll-title">Guruhga qo'shish</h2>
+            <button type="button" class="mv-modal-x" data-modal-close aria-label="Yopish">&times;</button>
+        </div>
+        {% if student.status != 'active' %}
+        <p class="mv-alert mv-alert--warning">Faqat faol o'quvchini guruhga qo'shish mumkin. Avval holatni "Faol" qiling.</p>
+        {% endif %}
+        <form method="post" id="enroll-form" class="mv-pay-form">
+            {% csrf_token %}
+            <input type="hidden" name="student" value="{{ student.pk }}">
+            <input type="hidden" name="next" value="{{ request.path }}">
+            <div class="grid grid-cols-2 gap-2">
+                <label>Kurs
+                    <select id="enroll-course"><option value="">Barchasi</option>{% for c in courses %}<option value="{{ c.pk }}">{{ c.name }}</option>{% endfor %}</select>
+                </label>
+                <label>O'qituvchi
+                    <select id="enroll-teacher"><option value="">Barchasi</option>{% for t in teachers %}<option value="{{ t.pk }}">{{ t.full_name }}</option>{% endfor %}</select>
+                </label>
+            </div>
+            <label>Guruh
+                <select id="enroll-group" required>
+                    <option value="">Guruhni tanlang</option>
+                    {% for g in enroll_groups %}
+                    <option value="{{ g.pk }}" data-url="{% url 'groups:group_enroll' g.pk %}" data-course="{{ g.course_id }}" data-teacher="{{ g.teacher_id|default:'' }}">{{ g.name }} — {{ g.course.name }}{% if g.teacher %}, {{ g.teacher.full_name }}{% endif %}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <div class="grid grid-cols-2 gap-2">
+                <label>A'zolik turi
+                    <select name="status"><option value="active">Faol a'zo</option><option value="trial">Sinov darsi (bepul)</option></select>
+                </label>
+                <label>Boshlanish sanasi
+                    <input type="date" name="start_date" value="{{ today|date:'Y-m-d' }}" required>
+                </label>
+            </div>
+            <button type="submit" class="mv-pay-submit">Qo'shish</button>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<script>
+(() => {
+    // Bo'limlar (tablar): tanlangan bo'lim manzil satridagi #hash da saqlanadi
+    const tabs = [...document.querySelectorAll('[data-tab]')];
+    const panels = [...document.querySelectorAll('[data-panel]')];
+    const show = (name) => {
+        if (!tabs.some(t => t.dataset.tab === name)) name = tabs[0].dataset.tab;
+        tabs.forEach(t => { const on = t.dataset.tab === name; t.classList.toggle('is-active', on); t.setAttribute('aria-selected', on); });
+        panels.forEach(p => { p.hidden = p.dataset.panel !== name; });
+    };
+    tabs.forEach(t => t.addEventListener('click', () => { history.replaceState(null, '', `#${t.dataset.tab}`); show(t.dataset.tab); }));
+    show(location.hash.slice(1));
+
+    // Moliyaviy tarix: guruh bo'yicha filtr
+    const ledgerFilter = document.getElementById('ledger-group-filter');
+    ledgerFilter?.addEventListener('change', () => {
+        document.querySelectorAll('[data-ledger-group]').forEach(row => {
+            row.hidden = Boolean(ledgerFilter.value) && row.dataset.ledgerGroup !== ledgerFilter.value;
+        });
+    });
+
+    // "Guruhga qo'shish" oynasi
+    const modal = document.getElementById('enroll-modal');
+    if (!modal) return;
+    const course = document.getElementById('enroll-course');
+    const teacher = document.getElementById('enroll-teacher');
+    const group = document.getElementById('enroll-group');
+    const form = document.getElementById('enroll-form');
+    const filterGroups = () => {
+        [...group.options].forEach(opt => {
+            if (!opt.value) return;
+            opt.hidden = (course.value && opt.dataset.course !== course.value) || (teacher.value && opt.dataset.teacher !== teacher.value);
+        });
+        if (group.selectedOptions[0]?.hidden) group.value = '';
+    };
+    course.addEventListener('change', filterGroups);
+    teacher.addEventListener('change', filterGroups);
+    group.addEventListener('change', () => { form.action = group.selectedOptions[0]?.dataset.url || ''; });
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('[data-modal-open="enroll-modal"]')) { modal.hidden = false; group.focus(); }
+        else if (e.target.closest('[data-modal-close]')) modal.hidden = true;
+    });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') modal.hidden = true; });
+})();
+</script>
+{% endblock %}

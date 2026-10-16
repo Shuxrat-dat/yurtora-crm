@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% load mv %}
+
+{% block title %}Qarz eslatmalari — Yurtora CRM{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div>
+        <h1 class="text-2xl font-bold text-slate-900">Qarz eslatmalari (Telegram)</h1>
+        <p class="text-sm text-slate-500 mt-1">
+            Yuborishdan oldin ro'yxatni ko'rib chiqing. Faqat belgilangan va Telegram ulangan o'quvchilarga yuboriladi.
+            Yaqinda (3 kun ichida) eslatma olganlar o'tkazib yuboriladi.
+        </p>
+    </div>
+
+    <p class="text-sm"><a href="{% url 'notifications:admin_chat' %}" class="text-indigo-600 hover:underline">Haftalik ro'yxatni o'z Telegramimga olish</a></p>
+
+    {% if not configured %}
+    <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">Telegram bot sozlanmagan.</div>
+    {% endif %}
+
+    <form method="post" onsubmit="return confirm('Belgilangan o‘quvchilarga eslatma yuborilsinmi?')">
+        {% csrf_token %}
+        <div class="flex items-center justify-between mb-3">
+            <p class="text-sm text-slate-600">Yuborish mumkin: <strong>{{ sendable }}</strong> &middot; Telegram ulanmagan: {{ without_telegram }}</p>
+            <button type="submit" {% if not configured or not sendable %}disabled{% endif %} class="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-slate-300 text-white text-sm font-medium rounded-lg">Belgilanganlarga yuborish</button>
+        </div>
+        <div class="overflow-x-auto bg-white rounded-xl shadow-sm border border-slate-200">
+            <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
+                <thead class="bg-slate-50 text-slate-600 font-semibold">
+                    <tr>
+                        <th class="px-4 py-3"></th>
+                        <th class="px-4 py-3">O'quvchi</th>
+                        <th class="px-4 py-3">Qarz (so'm)</th>
+                        <th class="px-4 py-3">Telegram</th>
+                        <th class="px-4 py-3">Oxirgi eslatma</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for r in rows %}
+                    <tr>
+                        <td class="px-4 py-3">
+                            <input type="checkbox" name="student" value="{{ r.student.pk }}"
+                                   {% if r.has_telegram and not r.cooldown %}checked{% else %}disabled{% endif %}>
+                        </td>
+                        <td class="px-4 py-3 font-medium text-slate-900"><a href="{% url 'notifications:student_telegram' r.student.pk %}" class="hover:underline">{{ r.student.full_name }}</a></td>
+                        <td class="px-4 py-3 font-semibold text-red-700">{{ r.total|som }}</td>
+                        <td class="px-4 py-3">{% if r.has_telegram %}<span class="text-emerald-700">ulangan</span>{% else %}<span class="text-slate-400">yo'q</span>{% endif %}</td>
+                        <td class="px-4 py-3 text-slate-600">{% if r.last_sent %}{{ r.last_sent|date:"d.m.Y H:i" }}{% if r.cooldown %} (yaqinda){% endif %}{% else %}—{% endif %}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5" class="px-6 py-10 text-center text-slate-500">Qarzdorlar yo'q.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </form>
+</div>
+{% endblock %}

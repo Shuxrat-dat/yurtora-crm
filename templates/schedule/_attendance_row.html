@@ -1,0 +1,40 @@
+<tr id="att-row-{{ student.pk }}"
+    hx-target="#att-row-{{ student.pk }}"
+    hx-swap="outerHTML">
+    <td class="px-4 py-3 font-medium text-slate-900">
+        <a href="{% url 'students:student_detail' student.pk %}" class="hover:text-indigo-600">
+            {{ student.full_name }}
+        </a>
+    </td>
+    <td class="px-4 py-3 text-slate-500 text-sm">{% if user.role != 'teacher' %}{{ student.phone }}{% else %}—{% endif %}</td>
+    <td class="px-4 py-3">
+        <div class="flex flex-wrap gap-1">
+            {% for val, label in attendance_statuses %}
+            <form method="post" action="{% url 'schedule:mark_attendance' lesson.pk %}">
+                {% csrf_token %}
+                <input type="hidden" name="student_id" value="{{ student.pk }}">
+                <input type="hidden" name="status" value="{{ val }}">
+                <button type="submit"
+                        hx-post="{% url 'schedule:mark_attendance' lesson.pk %}"
+                        hx-include="closest form"
+                        hx-target="#att-row-{{ student.pk }}"
+                        hx-swap="outerHTML"
+                        class="px-2.5 py-1 rounded text-xs font-semibold border transition
+                        {% if attendance and attendance.status == val %}
+                            {% if val == 'present' %}bg-emerald-500 text-white border-emerald-500
+                            {% elif val == 'absent' %}bg-red-500 text-white border-red-500
+                            {% elif val == 'late' %}bg-amber-500 text-white border-amber-500
+                            {% else %}bg-blue-500 text-white border-blue-500{% endif %}
+                        {% else %}
+                            bg-white text-slate-600 border-slate-300 hover:border-slate-500
+                        {% endif %}">
+                    {% if val == 'present' %}Keldi
+                    {% elif val == 'absent' %}Kelmadi
+                    {% elif val == 'late' %}Kechikdi
+                    {% else %}Sababli{% endif %}
+                </button>
+            </form>
+            {% endfor %}
+        </div>
+    </td>
+</tr>

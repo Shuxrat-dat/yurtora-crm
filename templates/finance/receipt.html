@@ -1,0 +1,219 @@
+{% load mv %}{% load static %}<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To'lov cheki №{{ entry.pk }} — Yurtora CRM</title>
+    <link rel="stylesheet" href="{% static 'css/app.css' %}?v={{ ASSET_VERSION }}">
+    <style>
+        /* Chek termoprinter (80 mm) uchun: faqat qora rang (kulrang termoprinterda xira va siyrak chiqadi),
+           yirik va qalin yozuv, sonlar bir xil kenglikda. */
+        @page { margin: 1.5mm 1mm; } /* o'lcham printer drayveridan: 80 mm va 58 mm lentada ham to'liq kenglikda */
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            padding: 2rem 1rem;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            background: #e9edf3;
+            color: #000;
+            font-family: "Barlow", system-ui, sans-serif;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        .rc-container { width: 100%; max-width: 23rem; }
+        .rc-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+        .rc-back { display: inline-flex; align-items: center; gap: .35rem; font-size: .9rem; font-weight: 600; color: #4a5168; text-decoration: none; }
+        .rc-back:hover { color: #000; }
+        .rc-print-btn {
+            display: inline-flex; align-items: center; gap: .45rem; padding: .6rem 1.1rem;
+            font: 600 .95rem "Barlow", sans-serif; color: #fff; background: #161a2e;
+            border: 0; border-radius: .5rem; cursor: pointer;
+        }
+        .rc-print-btn:hover { background: #e62429; }
+
+        .rc-paper {
+            background: #fff;
+            padding: 1.5rem 1.25rem 1.25rem;
+            border-radius: .35rem;
+            box-shadow: 0 18px 40px -18px rgba(22, 26, 46, .35);
+        }
+
+        .rc-logo { display: flex; justify-content: center; margin-bottom: .75rem; }
+        .rc-logo-tile {
+            display: inline-flex; flex-direction: column; align-items: center;
+            padding: .5rem .9rem .45rem; background: #000; color: #fff; border-radius: .45rem;
+        }
+        .rc-logo-letter { font: italic 800 1.9rem/1 "Barlow Condensed", sans-serif; color: #e62429; }
+        .rc-logo-name { font: italic 800 1rem/1 "Barlow Condensed", sans-serif; letter-spacing: .06em; margin-top: .15rem; }
+        .rc-logo-sub { font: 600 .55rem/1.2 "Barlow", sans-serif; letter-spacing: .2em; }
+
+        .rc-head { text-align: center; margin-bottom: .9rem; }
+        .rc-title { font: 800 1.6rem/1.05 "Barlow Condensed", sans-serif; letter-spacing: .03em; text-transform: uppercase; }
+        .rc-sub { margin-top: .3rem; font-size: .95rem; font-weight: 600; line-height: 1.35; }
+
+        .rc-rule { border: 0; border-top: 2px dashed #000; margin: .7rem 0; }
+        .rc-time { display: flex; justify-content: space-between; font-size: 1rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+        .rc-rows { display: grid; gap: .45rem; }
+        .rc-row { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .75rem; align-items: baseline; }
+        .rc-label { font-size: .95rem; font-weight: 500; white-space: nowrap; }
+        .rc-value { font-size: 1.02rem; font-weight: 700; text-align: right; overflow-wrap: break-word; font-variant-numeric: tabular-nums; }
+        .rc-nowrap { white-space: nowrap; }
+
+        .rc-total { text-align: center; padding: .2rem 0; break-inside: avoid; page-break-inside: avoid; }
+        .rc-total-label { font-size: 1rem; font-weight: 600; }
+        .rc-total-sum {
+            margin-top: .1rem;
+            font: 800 2.25rem/1.05 "Barlow Condensed", sans-serif;
+            letter-spacing: .01em;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+        .rc-total-sum small { font-size: 1.25rem; font-weight: 800; }
+
+        .rc-qr { display: flex; justify-content: center; margin: .9rem 0 .5rem; break-inside: avoid; page-break-inside: avoid; }
+        .rc-qr-box { width: 34mm; height: 34mm; }
+        .rc-qr-box svg { display: block; width: 100%; height: 100%; shape-rendering: crispEdges; }
+
+        .rc-foot { text-align: center; font-size: .95rem; font-weight: 600; margin-top: .4rem; }
+
+        @media print {
+            body { display: block; padding: 0; background: #fff; min-height: 0; }
+            .no-print { display: none !important; }
+            .rc-container { max-width: none; width: 100%; }
+            .rc-paper { padding: 0; border-radius: 0; box-shadow: none; }
+            .rc-logo-letter { color: #fff; } /* termoprinter qizilni kulrang nuqtalar bilan chiqaradi */
+
+            /* Ixcham chop etish: 58 mm lentada (bosma kengligi ~48 mm) qatorlar bo'linmaydi va chek qisqa chiqadi */
+            .rc-logo { margin-bottom: 1.5mm; }
+            .rc-logo-tile { padding: 1mm 2.5mm; border-radius: 1mm; }
+            .rc-logo-letter { font-size: 12pt; }
+            .rc-logo-name { font-size: 8pt; }
+            .rc-logo-sub { display: none; }
+            .rc-head { margin-bottom: 1mm; }
+            .rc-title { font-size: 12.5pt; white-space: nowrap; letter-spacing: 0; }
+            .rc-sub { margin-top: .3mm; font-size: 7.5pt; line-height: 1.2; }
+            .rc-rule { margin: 1.3mm 0; border-top-width: 1px; }
+            .rc-time { font-size: 8.5pt; }
+            .rc-rows { gap: .6mm; }
+            .rc-row { gap: 2mm; }
+            .rc-label { font-size: 8pt; }
+            .rc-value { font-size: 8.5pt; line-height: 1.2; }
+            .rc-total { padding: 0; }
+            .rc-total-label { font-size: 8pt; }
+            .rc-total-sum { font-size: 18pt; }
+            .rc-total-sum small { font-size: 10pt; }
+            .rc-qr { margin: 1.5mm 0 1mm; }
+            .rc-qr-box { width: 20mm; height: 20mm; }
+            .rc-foot { font-size: 7.5pt; margin-top: .5mm; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="rc-container">
+    <!-- Yuqori boshqaruv paneli (faqat ekranda ko'rinadi) -->
+    <div class="rc-bar no-print">
+        <a href="{% if back_url %}{{ back_url }}{% else %}javascript:history.back(){% endif %}" class="rc-back">
+            <svg class="mv-ico" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+            Ortga
+        </a>
+        <button type="button" onclick="window.print()" class="rc-print-btn">
+            <svg class="mv-ico" viewBox="0 0 24 24"><path d="M7 9V3h10v6M7 17H4v-7h16v7h-3M7 14h10v7H7z"/></svg>
+            Chop etish
+        </button>
+    </div>
+
+    <article class="rc-paper">
+        {% if settings.show_logo and settings.logo_position == 'top' %}
+        <div class="rc-logo">
+            <div class="rc-logo-tile">
+                <span class="rc-logo-letter" aria-hidden="true">{{ CENTER_INITIAL }}</span>
+                <span class="rc-logo-name">{{ CENTER_NAME }}</span>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if settings.show_header %}
+        <header class="rc-head">
+            <div class="rc-title">TO'LOV KVITANSIYASI</div>
+            {% if settings.show_address and settings.address %}<div class="rc-sub">{{ settings.address }}</div>{% endif %}
+            {% if settings.show_phone and settings.phone %}<div class="rc-sub">{{ settings.phone }}</div>{% endif %}
+        </header>
+        {% endif %}
+
+        {% if settings.show_issued_time %}
+        <hr class="rc-rule">
+        <div class="rc-time">
+            <span>{{ entry.created_at|date:"d.m.Y" }}</span>
+            <span>{{ entry.created_at|date:"H:i" }}</span>
+        </div>
+        {% endif %}
+
+        <hr class="rc-rule">
+        <div class="rc-rows">
+            {% if settings.show_payment_id %}
+            <div class="rc-row"><span class="rc-label">Chek №</span><span class="rc-value rc-nowrap">{{ entry.pk }}</span></div>
+            {% endif %}
+            {% if settings.show_student_info and student %}
+            <div class="rc-row"><span class="rc-label">O'quvchi</span><span class="rc-value">{{ student.full_name }}</span></div>
+            {% endif %}
+            {% if settings.show_group_info and group %}
+            <div class="rc-row"><span class="rc-label">Guruh</span><span class="rc-value">{{ group.name }}</span></div>
+            {% endif %}
+            {% if settings.show_course_price and course %}
+            <div class="rc-row"><span class="rc-label">Kurs narxi</span><span class="rc-value rc-nowrap">{{ course.monthly_price|som }} so'm</span></div>
+            {% endif %}
+            {% if settings.show_payment_method %}
+            <div class="rc-row"><span class="rc-label">To'lov turi</span><span class="rc-value">{{ entry.get_method_display }}</span></div>
+            {% endif %}
+            {% if settings.show_payment_date %}
+            <div class="rc-row"><span class="rc-label">To'lov sanasi</span><span class="rc-value rc-nowrap">{{ entry.entry_date|date:"d.m.Y" }}</span></div>
+            {% endif %}
+            {% if settings.show_cashier %}
+            <div class="rc-row"><span class="rc-label">Qabul qildi</span><span class="rc-value">{{ entry.created_by.get_full_name|default:entry.created_by.username|default:"—" }}</span></div>
+            {% endif %}
+            {% if settings.show_teacher and teacher %}
+            <div class="rc-row"><span class="rc-label">O'qituvchi</span><span class="rc-value">{{ teacher.full_name }}</span></div>
+            {% endif %}
+        </div>
+
+        {% if settings.show_amount %}
+        <hr class="rc-rule">
+        <div class="rc-total">
+            <div class="rc-total-label">To'lov miqdori</div>
+            <div class="rc-total-sum">{{ entry.amount|som }} <small>so'm</small></div>
+        </div>
+        <hr class="rc-rule">
+        {% endif %}
+
+        {% if settings.show_qr_code and qr_svg %}
+        <div class="rc-qr"><div class="rc-qr-box">{{ qr_svg|safe }}</div></div>
+        {% endif %}
+
+        {% if settings.show_logo and settings.logo_position == 'bottom' %}
+        <div class="rc-logo">
+            <div class="rc-logo-tile">
+                <span class="rc-logo-letter" aria-hidden="true">{{ CENTER_INITIAL }}</span>
+                <span class="rc-logo-name">{{ CENTER_NAME }}</span>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if settings.show_footer and settings.show_footer_text and settings.footer_text %}
+        <div class="rc-foot">{{ settings.footer_text }}</div>
+        {% endif %}
+    </article>
+</div>
+
+{% if auto_print %}
+<script>
+    // Logotip va QR yuklangach chop etish oynasi avtomatik ochiladi
+    window.addEventListener('load', function () { setTimeout(function () { window.print(); }, 150); });
+</script>
+{% endif %}
+</body>
+</html>

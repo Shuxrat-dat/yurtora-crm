@@ -1,0 +1,53 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: yurtora_crm_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-yurtora_crm}
+      POSTGRES_USER: ${POSTGRES_USER:-yurtora_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Zadayte POSTGRES_PASSWORD v faile .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    # Порт 5432 наружу на хост намеренно не публикуется (доступ только внутри docker-сети)
+
+  web:
+    build: .
+    container_name: yurtora_crm_web
+    restart: unless-stopped
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      # Внутри docker-сети база доступна по имени "db", а не localhost (переопределяет .env)
+      DATABASE_URL: postgres://${POSTGRES_USER:-yurtora_user}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-yurtora_crm}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  bot:
+    build: .
+    container_name: yurtora_crm_bot
+    restart: unless-stopped
+    command: python manage.py run_telegram_bot
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-yurtora_user}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-yurtora_crm}
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

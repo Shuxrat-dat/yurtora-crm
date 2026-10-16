@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% load mv %}
+
+{% block title %}Kunlik kassa — Yurtora CRM{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Sarlavha -->
+    <h1 class="text-3xl font-bold text-slate-900">Kunlik kassa</h1>
+
+    <!-- Filtr (sanalar va usul) -->
+    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <form method="get" class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Dan</label>
+                <input type="date" name="date_from" value="{{ current_date_from }}" 
+                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Gacha</label>
+                <input type="date" name="date_to" value="{{ current_date_to }}" 
+                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">To'lov usuli</label>
+                <select name="method" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <option value="">Barcha usullar</option>
+                    {% for val, label in payment_methods %}
+                    <option value="{{ val }}" {% if current_method == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex items-end">
+                <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg shadow-sm transition w-full">
+                    Filtr
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Umumiy summa -->
+    <div class="bg-emerald-50 border border-emerald-200 p-6 rounded-xl">
+        <div class="flex items-center justify-between">
+            <span class="text-sm font-semibold text-emerald-800">Umumiy qabul qilingan:</span>
+            <span class="text-3xl font-bold text-emerald-700">{{ total_amount|som }} so'm</span>
+        </div>
+    </div>
+
+    <!-- To'lov usullari bo'yicha -->
+    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <h2 class="text-lg font-bold text-slate-900 mb-4">To'lov usullari bo'yicha</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {% for method_label, amount in method_totals.items %}
+            <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                <div class="text-xs font-semibold text-slate-600 mb-1">{{ method_label }}</div>
+                <div class="text-xl font-bold text-slate-900">{{ amount|som }} so'm</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- To'lovlar ro'yxati -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <h2 class="text-lg font-bold text-slate-900 p-6 pb-4 border-b border-slate-100">To'lovlar</h2>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
+                <thead class="bg-slate-50 text-slate-600 font-semibold text-xs">
+                    <tr>
+                        <th class="px-4 py-3">Sana</th>
+                        <th class="px-4 py-3">O'quvchi</th>
+                        <th class="px-4 py-3">Guruh</th>
+                        <th class="px-4 py-3">Summa</th>
+                        <th class="px-4 py-3">Usul</th>
+                        <th class="px-4 py-3">Kim qabul qildi</th>
+                        <th class="px-4 py-3">Izoh</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for payment in payments %}
+                    <tr class="hover:bg-slate-50">
+                        <td class="px-4 py-3 text-slate-600">{{ payment.entry_date|date:"d.m.Y" }}</td>
+                        <td class="px-4 py-3">
+                            <a href="{% url 'students:student_detail' payment.student.pk %}" class="font-semibold text-slate-900 hover:text-indigo-600">
+                                {{ payment.student.full_name }}
+                            </a>
+                        </td>
+                        <td class="px-4 py-3">
+                            <a href="{% url 'groups:group_detail' payment.group.pk %}" class="text-slate-700 hover:text-indigo-600">
+                                {{ payment.group.name }}
+                            </a>
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="font-bold text-emerald-700">{{ payment.amount|som }} so'm</span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="px-2 py-0.5 rounded text-xs font-semibold bg-slate-100 text-slate-700">
+                                {{ payment.get_method_display }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-slate-600 text-xs">
+                            {{ payment.created_by.username|default:"—" }}
+                        </td>
+                        <td class="px-4 py-3 text-slate-500 text-xs">{{ payment.comment|default:"—" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="px-4 py-8 text-center text-slate-400">
+                            Tanlangan davr uchun to'lovlar topilmadi
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

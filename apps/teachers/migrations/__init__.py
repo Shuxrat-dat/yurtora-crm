@@ -1,0 +1,1 @@
+"""Migrations for teachers app."""

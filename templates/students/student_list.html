@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block title %}O'quvchilar — Yurtora CRM{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Yuqori qism: Sarlavha va Qo'shish tugmasi -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-900">O'quvchilar</h1>
+            <p class="text-sm text-slate-500 mt-1">Qidiruv va filtrlar darhol qo'llanadi.</p>
+        </div>
+        {% if can_manage_student %}
+        <div class="flex flex-wrap items-center gap-3">
+            <a href="#" data-export-xlsx class="px-4 py-2 bg-slate-100 text-sm font-medium rounded-lg">Excel yuklab olish</a>
+            <a href="{% url 'students:churn_report' %}" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-lg transition">Ketish sabablari</a>
+            <a href="{% url 'students:student_import' %}" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-lg transition">Excel import</a>
+            <a href="{% url 'notifications:debt_reminders' %}" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-lg transition">Qarz eslatmalari</a>
+            <a href="{% url 'students:student_create' %}" class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg shadow-sm transition">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                Yangi o'quvchi
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Filtr va jonli qidiruv paneli -->
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+        <form method="get"
+              action="{% url 'students:student_list' %}"
+              hx-get="{% url 'students:student_list' %}"
+              hx-target="#student-table-container"
+              hx-swap="outerHTML"
+              hx-push-url="true"
+              hx-trigger="submit, change from:find select, input changed delay:300ms from:find input"
+              class="space-y-4">
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <!-- Ism yoki telefon bo'yicha jonli qidiruv -->
+                <div class="sm:col-span-2">
+                    <label for="search-input" class="block text-xs font-semibold text-slate-600 mb-1">Qidiruv (Ism, familiya, telefon)</label>
+                    <div class="relative">
+                        <input type="text"
+                               name="q"
+                               id="search-input"
+                               value="{{ current_q }}"
+                               placeholder="Qidirish..."
+                               class="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Holati bo'yicha filtr -->
+                <div>
+                    <label for="status-filter" class="block text-xs font-semibold text-slate-600 mb-1">Holati</label>
+                    <select name="status"
+                            id="status-filter"
+                            class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <option value="">Barcha holatlar</option>
+                        <option value="active" {% if current_status == 'active' %}selected{% endif %}>Faol</option>
+                        <option value="archived" {% if current_status == 'archived' %}selected{% endif %}>Arxivlangan</option>
+                        <option value="frozen" {% if current_status == 'frozen' %}selected{% endif %}>Muzlatilgan</option>
+                        <option value="trial" {% if current_status == 'trial' %}selected{% endif %}>Sinov darsida</option>
+                    </select>
+                </div>
+
+                <!-- Guruh bo'yicha filtr -->
+                <div>
+                    <label for="group-filter" class="block text-xs font-semibold text-slate-600 mb-1">Guruh</label>
+                    <select name="group"
+                            id="group-filter"
+                            class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <option value="">Barcha guruhlar</option>
+                        {% for g in groups %}
+                        <option value="{{ g.id }}" {% if current_group == g.id|stringformat:"s" %}selected{% endif %}>{{ g.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- O'qituvchi bo'yicha filtr -->
+                <div>
+                    <label for="teacher-filter" class="block text-xs font-semibold text-slate-600 mb-1">O'qituvchi</label>
+                    <select name="teacher"
+                            id="teacher-filter"
+                            class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <option value="">Barcha o'qituvchilar</option>
+                        {% for t in teachers %}
+                        <option value="{{ t.id }}" {% if current_teacher == t.id|stringformat:"s" %}selected{% endif %}>{{ t.full_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Manba bo'yicha filtr -->
+                <div>
+                    <label for="source-filter" class="block text-xs font-semibold text-slate-600 mb-1">Qayerdan bildi (manba)</label>
+                    <select name="source"
+                            id="source-filter"
+                            class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <option value="">Barcha manbalar</option>
+                        {% for val, label in sources %}
+                        <option value="{{ val }}" {% if current_source == val %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Maktab bo'yicha filtr -->
+                <div>
+                    <label for="school-filter" class="block text-xs font-semibold text-slate-600 mb-1">Maktab / Ta'lim muassasasi</label>
+                    <input type="text"
+                           name="school"
+                           id="school-filter"
+                           value="{{ current_school }}"
+                           placeholder="Maktab nomi..."
+                           class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+
+                <!-- Qora ro'yxat bo'yicha filtr -->
+                <div>
+                    <label for="blacklist-filter" class="block text-xs font-semibold text-slate-600 mb-1">Qora ro'yxat</label>
+                    <select name="blacklist"
+                            id="blacklist-filter"
+                            class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <option value="">Hammasi</option>
+                        <option value="yes" {% if current_blacklist == 'yes' %}selected{% endif %}>Faqat qora ro'yxatdagilar</option>
+                        <option value="no" {% if current_blacklist == 'no' %}selected{% endif %}>Qora ro'yxatda bo'lmaganlar</option>
+                    </select>
+                </div>
+
+                <!-- Kurs bo'yicha filtr -->
+                <div>
+                    <label for="course-filter" class="block text-xs font-semibold text-slate-600 mb-1">Kurs</label>
+                    <select name="course" id="course-filter" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg">
+                        <option value="">Barcha kurslar</option>
+                        {% for c in courses %}<option value="{{ c.id }}" {% if current_course == c.id|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+                    </select>
+                </div>
+
+                {% if user.role != 'teacher' %}
+                <!-- To'lov holati -->
+                <div>
+                    <label for="payment-filter" class="block text-xs font-semibold text-slate-600 mb-1">To'lov holati</label>
+                    <select name="payment" id="payment-filter" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg">
+                        <option value="">Hammasi</option>
+                        <option value="debt" {% if current_payment == 'debt' %}selected{% endif %}>Qarzdorlar</option>
+                        <option value="ok" {% if current_payment == 'ok' %}selected{% endif %}>Qarzi yo'q</option>
+                    </select>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="flex items-center justify-end gap-4 pt-2 border-t border-slate-100">
+                <a href="{% url 'students:student_list' %}"
+                   class="inline-flex items-center text-xs font-medium text-slate-600 hover:text-indigo-600">
+                    <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                    Barcha filtrlarni tozalash
+                </a>
+                <button type="submit" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-lg transition">
+                    Qidirish
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- O'quvchilar jadvali -->
+    {% include "students/_student_table.html" %}
+</div>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% if students %}
+<ul class="mv-pay-list">
+    {% for s in students %}
+    <li>
+        <button type="button" class="mv-pay-item"
+                data-pay-pick="{% url 'finance:payment_modal_form' s.pk %}">
+            <span class="mv-pay-name">{{ s.full_name }}</span>
+            <span class="mv-pay-groups">{% for e in s.open_enrollments %}{{ e.group.name }}{% if not forloop.last %}, {% endif %}{% empty %}guruhsiz{% endfor %}</span>
+        </button>
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<p class="mv-pay-empty">Hech narsa topilmadi</p>
+{% endif %}

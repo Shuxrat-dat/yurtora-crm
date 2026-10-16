@@ -1,0 +1,48 @@
+{% load mv %}
+<div class="mv-pay-student">{{ student.full_name }}</div>
+{% if items %}
+<form method="post" action="{% url 'finance:payment_add' %}" class="mv-pay-form" data-once>
+    {% csrf_token %}
+    <input type="hidden" name="student_id" value="{{ student.pk }}">
+    <input type="hidden" name="idempotency_key" value="{% idem_key %}">
+    <input type="hidden" name="next" value="{{ next_url }}">
+
+    <label>Guruh
+        <select name="group_id" required>
+            {% for item in items %}
+            <option value="{{ item.group.pk }}">{{ item.group.name }} ({{ item.status }}) — balans: {{ item.balance|som }} so'm</option>
+            {% endfor %}
+        </select>
+    </label>
+
+    <label>Summa (so'm)
+        <input type="number" name="amount" min="1" step="1" required placeholder="Masalan: 500000">
+    </label>
+
+    <label>To'lov usuli
+        <select name="method" required>
+            {% for value, label in methods %}
+            <option value="{{ value }}">{{ label }}</option>
+            {% endfor %}
+        </select>
+    </label>
+
+    <label>Sana
+        <input type="date" name="entry_date" value="{{ today|date:'Y-m-d' }}" required>
+    </label>
+
+    <label>Izoh
+        <textarea name="comment" rows="2" placeholder="Ixtiyoriy izoh..."></textarea>
+    </label>
+
+    <div class="mv-pay-actions">
+        <button type="submit" name="action" value="print" class="mv-pay-submit">
+            <svg class="mv-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9V3h10v6M7 17H4v-7h16v7h-3M7 14h10v7H7z"/></svg>
+            Saqlash va chek chiqarish
+        </button>
+        <button type="submit" name="action" value="save" class="mv-pay-save">Faqat saqlash</button>
+    </div>
+</form>
+{% else %}
+<p class="mv-pay-empty">O'quvchi hech bir guruhga a'zo emas. Avval guruhga qo'shing.</p>
+{% endif %}

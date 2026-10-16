@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Tizimga kirish — Yurtora CRM{% endblock %}
+
+{% block content %}
+<div class="mv-login">
+    <section class="mv-login-cover" aria-label="{{ CENTER_NAME }}">
+        <div class="mv-login-mark">
+            <span class="mv-brand-mark" aria-hidden="true">{{ CENTER_INITIAL }}</span>
+            {{ CENTER_NAME }}
+        </div>
+        <div>
+            <p class="mv-login-title"><span>Yurtora</span><span>CRM</span></p>
+            <p class="mv-login-lead">O'quvchilar, guruhlar, dars jadvali va to'lovlar bitta joyda.</p>
+        </div>
+        <p class="mv-login-foot">O'quv markazi boshqaruv tizimi</p>
+    </section>
+
+    <section class="mv-login-panel">
+        <div class="mv-login-form mv-page">
+            <h1>Tizimga kirish</h1>
+            <p class="mv-login-hint">Login va parolingizni kiriting.</p>
+
+            {% if form.errors %}
+            <div class="mv-alert mv-alert--error mt-5" role="alert">
+                Login yoki parol noto'g'ri. Qayta tekshirib kiriting.
+            </div>
+            {% endif %}
+
+            <form method="post" action="{% url 'accounts:login' %}" class="grid gap-4 mt-6">
+                {% csrf_token %}
+                {% if request.GET.next %}
+                <input type="hidden" name="next" value="{{ request.GET.next }}">
+                {% endif %}
+
+                <div class="mv-field">
+                    <label for="{{ form.username.id_for_label }}">{{ form.username.label }}</label>
+                    {{ form.username }}
+                </div>
+
+                <div class="mv-field">
+                    <label for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>
+                    {{ form.password }}
+                </div>
+
+                <button type="submit" id="login-submit" class="mv-btn mv-btn--primary mv-login-submit">
+                    Kirish
+                </button>
+            </form>
+        </div>
+    </section>
+</div>
+{% endblock %}

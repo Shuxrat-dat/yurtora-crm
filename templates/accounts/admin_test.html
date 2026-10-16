@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Administrator paneli — Yurtora CRM{% endblock %}
+
+{% block content %}
+<div class="bg-white p-8 rounded-xl shadow-sm border border-slate-200">
+    <div class="flex items-center space-x-3 mb-4">
+        <span class="text-3xl">🛡️</span>
+        <h1 class="text-2xl font-bold text-slate-900">Administrator bo'limi</h1>
+    </div>
+    <p class="text-slate-600 mb-6">
+        Ushbu bo'lim faqat <strong>Administratorlar</strong> va <strong>Direktor</strong> uchun mo'ljallangan.
+    </p>
+
+    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
+        <div class="flex">
+            <div class="ml-3">
+                <p class="text-sm text-blue-700">
+                    Rol bo'yicha muvaffaqiyatli avtorizatsiya: <strong>{{ user.get_role_display }}</strong> ({{ user.username }}).
+                    Agar siz «O'qituvchi» roli bilan kirganingizda, server <strong>403 Forbidden</strong> xatosini qaytargan bo'lardi.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-8">
+        <a href="{% url 'accounts:home' %}" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">
+            &larr; Bosh sahifaga qaytish
+        </a>
+    </div>
+</div>
+{% endblock %}

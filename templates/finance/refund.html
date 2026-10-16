@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load mv %}
+
+{% block title %}Pul qaytarish — Yurtora CRM{% endblock %}
+
+{% block content %}
+<div class="max-w-xl">
+    <a href="{% url 'students:student_detail' student.pk %}" class="text-sm text-indigo-600">&larr; {{ student.full_name }}</a>
+    <h1 class="mt-1 mb-1">Pul qaytarish</h1>
+    <p class="text-sm text-slate-500 mb-5">Guruh: <strong>{{ group.name }}</strong>. Qaytarish mumkin bo'lgan summa — guruhdagi ortiqcha to'lov: <strong>{{ refundable|som }} so'm</strong>. Yozuv kitobga minus summa bilan tushadi va kassa hisobotida chiqim sifatida ko'rinadi.</p>
+
+    {% if refundable <= 0 %}
+    <div class="mv-alert mv-alert--warning">Bu guruhda qaytariladigan ortiqcha to'lov yo'q (balans: {{ balance|som }} so'm).</div>
+    {% else %}
+    <form method="post" class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4" data-once>
+        {% csrf_token %}
+        <input type="hidden" name="idempotency_key" value="{% idem_key %}">
+        {% if form.non_field_errors %}<div class="mv-alert mv-alert--error">{{ form.non_field_errors }}</div>{% endif %}
+        {% for field in form %}
+        <div>
+            <label for="{{ field.id_for_label }}" class="block text-sm font-semibold text-slate-700 mb-1">{{ field.label }}</label>
+            {{ field }}
+            {% for error in field.errors %}<p class="text-sm text-red-700 mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        {% endfor %}
+        <div class="flex justify-end gap-3 pt-3 border-t border-slate-100">
+            <a href="{% url 'students:student_detail' student.pk %}" class="mv-btn">Bekor qilish</a>
+            <button type="submit" class="mv-btn mv-btn--primary">Pulni qaytarish</button>
+        </div>
+    </form>
+    {% endif %}
+</div>
+{% endblock %}

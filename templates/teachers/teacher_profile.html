@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+{% load mv %}
+
+{% block title %}{{ teacher.full_name }} — Profil — Yurtora CRM{% endblock %}
+
+{% block content %}
+{% with info=profile.info %}
+<div class="space-y-6">
+    <div class="flex items-center justify-between flex-wrap gap-2">
+        <h1 class="text-2xl font-bold text-slate-900">{% if is_own %}Mening profilim{% else %}O'qituvchi profili{% endif %}</h1>
+        {% if not is_own %}
+        <a href="{% url 'teachers:teacher_list' %}" class="text-sm font-medium text-slate-600 hover:text-indigo-600">&larr; O'qituvchilar ro'yxati</a>
+        {% endif %}
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+
+        <!-- Ma'lumotlar -->
+        <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <h2 class="text-lg font-bold text-slate-900 pb-3 border-b border-slate-100">
+                {% if is_own %}Mening ma'lumotlarim{% else %}O'qituvchi ma'lumotlari{% endif %}
+            </h2>
+
+            <div class="flex flex-col items-center py-5">
+                <div class="mv-avatar" aria-hidden="true">{{ teacher.full_name|first|upper }}</div>
+                <p class="mt-3 text-lg font-bold text-slate-900 text-center">{{ teacher.full_name }}</p>
+                {% if not teacher.is_active %}
+                <span class="mt-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">Nofaol</span>
+                {% endif %}
+            </div>
+
+            <dl class="mv-profile-list">
+                <div><dt>Ro'yxatdan o'tgan sana</dt><dd>{{ info.registered|date:"d.m.Y" }}</dd></div>
+                <div><dt>Filial</dt><dd>{{ info.branch }}</dd></div>
+                <div><dt>Kurslar soni</dt><dd>{{ info.courses_count }}</dd></div>
+                <div><dt>Faol guruhlar soni</dt><dd>{{ info.groups_count }}</dd></div>
+                <div><dt>Faol o'quvchilar</dt><dd>{{ info.students_count }}</dd></div>
+            </dl>
+
+            <div class="mt-5 pt-4 border-t border-slate-100">
+                <h3 class="text-sm font-bold text-slate-700 mb-2">Kontakt</h3>
+                <p class="text-sm font-semibold text-slate-800">{{ info.phone }}</p>
+            </div>
+        </section>
+
+        <div class="lg:col-span-2 space-y-6">
+
+            <!-- Bugungi darslar: davomatni shu yerda belgilash -->
+            <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6" aria-labelledby="today-title">
+                <h2 id="today-title" class="text-lg font-bold text-slate-900 mb-1">Bugungi darslar</h2>
+                <p class="text-xs text-slate-500 mb-4">O'quvchining yonidagi tugmani bosing: belgi darhol saqlanadi. Boshqa tugmani bossangiz, o'zgaradi.</p>
+                {% for item in profile.lessons_today %}
+                <div class="mv-today-lesson" data-url="{% url 'groups:group_attendance' item.lesson.group_id %}" data-lesson="{{ item.lesson.pk }}">
+                    <div class="mv-today-head">
+                        <span class="font-semibold text-slate-900">{{ item.lesson.group.name }}</span>
+                        <span class="mv-ds-time">{{ item.lesson.start_time|time:"H:i" }}–{{ item.lesson.end_time|time:"H:i" }} · {{ item.lesson.room.name }}</span>
+                        {% if item.lesson.status == 'held' %}<span class="mv-pill mv-pill--ok ml-auto">Dars o'tildi</span>{% else %}
+                        <form method="post" action="{% url 'schedule:mark_lesson_held' item.lesson.pk %}" class="ml-auto" data-once>
+                            {% csrf_token %}
+                            <button type="submit" class="mv-btn">Dars o'tdi deb belgilash</button>
+                        </form>{% endif %}
+                        <a href="{% url 'schedule:lesson_detail' item.lesson.pk %}" class="text-sm font-medium">Dars sahifasi</a>
+                    </div>
+                    {% for row in item.rows %}
+                    <div class="mv-today-row">
+                        <span class="mv-today-name">{{ row.student.full_name }}{% if row.trial %} <span class="mv-pill mv-pill--gold">Sinov</span>{% endif %}</span>
+                        <span class="mv-att-btns" role="group" aria-label="{{ row.student.full_name }}: davomat">
+                            {% for value, label in item.buttons %}
+                            <button type="button" class="mv-att-btn is-{{ value }}{% if row.status == value %} is-on{% endif %}" data-student="{{ row.student.pk }}" data-status="{{ value }}" aria-pressed="{% if row.status == value %}true{% else %}false{% endif %}">{{ label }}</button>
+                            {% endfor %}
+                        </span>
+                    </div>
+                    {% empty %}
+                    <p class="text-sm text-slate-500 py-2">Bu guruhda faol o'quvchi yo'q.</p>
+                    {% endfor %}
+                </div>
+                {% empty %}
+                <p class="text-sm text-slate-500">Bugun dars yo'q.</p>
+                {% endfor %}
+                <p id="today-error" class="text-sm text-red-700 mt-2" role="alert" hidden></p>
+            </section>
+
+            <!-- Ish navbati -->
+            <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                <h2 class="text-lg font-bold text-slate-900 mb-4">Ish navbati</h2>
+                {% if profile.queue %}
+                <ul class="mv-profile-queue">
+                    {% for item in profile.queue %}
+                    <li>
+                        <a href="{% url 'schedule:lesson_detail' item.lesson.pk %}" class="mv-profile-queue-item">
+                            <span class="mv-profile-queue-main">
+                                <span class="mv-ds-time">{{ item.lesson.date|date:"d.m.Y" }} · {{ item.lesson.start_time|time:"H:i" }}–{{ item.lesson.end_time|time:"H:i" }}</span>
+                                <span class="font-semibold text-slate-900">{{ item.lesson.group.name }}</span>
+                            </span>
+                            {% if item.kind == 'attendance' %}
+                            <span class="mv-profile-tag mv-profile-tag--red">Davomat belgilanmagan: {{ item.count }} ta</span>
+                            {% else %}
+                            <span class="mv-profile-tag mv-profile-tag--gold">Dars o'tildi deb belgilanmagan</span>
+                            {% endif %}
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="mv-profile-empty">
+                    <span class="mv-profile-empty-ico mv-profile-empty-ico--ok" aria-hidden="true">✓</span>
+                    <p class="font-semibold text-slate-700">Navbat bo'sh</p>
+                    <p class="text-xs text-slate-500">Davomat va dars holati bo'yicha qarzdorlik yo'q.</p>
+                </div>
+                {% endif %}
+            </section>
+
+            <!-- Diqqat talab qiladi -->
+            <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                <h2 class="text-lg font-bold text-slate-900 mb-4">Diqqat talab qiladi</h2>
+                {% if profile.attention %}
+                <ul class="mv-profile-queue">
+                    {% for row in profile.attention %}
+                    <li class="mv-profile-queue-item">
+                        <span class="mv-profile-queue-main">
+                            <span class="font-semibold text-slate-900">{{ row.name }}</span>
+                            <span class="mv-ds-time">{{ row.group }}</span>
+                        </span>
+                        <span class="mv-profile-tag mv-profile-tag--red">Oxirgi 30 kunda {{ row.absences }} marta kelmagan</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="mv-profile-empty">
+                    <span class="mv-profile-empty-ico mv-profile-empty-ico--ok" aria-hidden="true">✓</span>
+                    <p class="font-semibold text-slate-700">Hozircha diqqat talab qiladigan o'quvchi yo'q</p>
+                    <p class="text-xs text-slate-500">Davomat ko'rsatkichlari barqaror.</p>
+                </div>
+                {% endif %}
+            </section>
+
+            <!-- Guruhlar -->
+            <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-bold text-slate-900">Guruhlar</h2>
+                    <a href="{% if show_archive %}?{% else %}?archive=1{% endif %}"
+                       class="mv-switch{% if show_archive %} is-on{% endif %}"
+                       role="switch" aria-checked="{% if show_archive %}true{% else %}false{% endif %}">
+                        <span class="mv-switch-track"><span class="mv-switch-dot"></span></span>
+                        <span>Arxiv</span>
+                    </a>
+                </div>
+
+                {% if not show_archive %}
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Hozirgi / Keyingi dars</h3>
+                {% with now=profile.lesson_now %}
+                {% if now %}
+                <a href="{% url 'schedule:lesson_detail' now.lesson.pk %}" class="mv-profile-queue-item mb-4">
+                    <span class="mv-profile-queue-main">
+                        <span class="mv-ds-time">
+                            {% if now.state == 'current' %}Hozirgi dars{% else %}Keyingi dars{% endif %}
+                            · {{ now.lesson.date|date:"d.m.Y" }} · {{ now.lesson.start_time|time:"H:i" }}–{{ now.lesson.end_time|time:"H:i" }}
+                        </span>
+                        <span class="font-semibold text-slate-900">{{ now.lesson.group.name }}</span>
+                    </span>
+                    <span class="mv-profile-tag mv-profile-tag--navy">{{ now.lesson.room.name }}</span>
+                </a>
+                {% else %}
+                <p class="text-sm italic text-slate-500 mb-4">Bugun dars yo'q</p>
+                {% endif %}
+                {% endwith %}
+                {% endif %}
+
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+                    {% if show_archive %}Arxivdagi guruhlar{% else %}Barcha guruhlar{% endif %}
+                </h3>
+                {% if profile.groups %}
+                <div class="mv-gcards">
+                    {% for row in profile.groups %}
+                    <a href="{% url 'groups:group_detail' row.group.pk %}" class="mv-gcard-t mv-tone-{{ row.group.pk|tone }}">
+                        <span class="mv-gcard-t-name">{{ row.group.name }}</span>
+                        <span class="mv-gcard-t-course">{{ row.group.course.name }}</span>
+                        <dl class="mv-gcard-t-meta">
+                            <div><dt>Sana</dt><dd>{{ row.group.start_date|date:"d.m.Y" }}{% if row.time %} · {{ row.time }}{% endif %}</dd></div>
+                            {% if row.rooms %}<div><dt>Xona</dt><dd>{{ row.rooms }}</dd></div>{% endif %}
+                            {% if row.days %}<div><dt>Kunlar</dt><dd>{{ row.days }}</dd></div>{% endif %}
+                        </dl>
+                        <span class="mv-gcard-t-badges">
+                            <span class="mv-pill" title="Jami o'quvchilar">Jami {{ row.total_count }}</span>
+                            <span class="mv-pill mv-pill--ok" title="Faol o'quvchilar">Faol {{ row.students_count }}</span>
+                            {% if row.trial_count %}<span class="mv-pill mv-pill--gold" title="Sinov darsida">Sinov {{ row.trial_count }}</span>{% endif %}
+                            <span class="mv-pill mv-pill--cyan" title="Guruh ishlagan oylar">{{ row.months }} oy</span>
+                        </span>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-base text-slate-400">Guruhlar mavjud emas</p>
+                {% endif %}
+            </section>
+        </div>
+    </div>
+</div>
+{% endwith %}
+<script>
+(() => {
+    const csrf = document.querySelector('[name=csrfmiddlewaretoken]')?.value
+        || document.cookie.split('; ').find(c => c.startsWith('csrftoken='))?.split('=')[1] || '';
+    const error = document.getElementById('today-error');
+    document.querySelectorAll('.mv-today-lesson').forEach(box => {
+        box.addEventListener('click', async (e) => {
+            const btn = e.target.closest('.mv-att-btn');
+            if (!btn || btn.disabled) return;
+            const group = btn.closest('.mv-att-btns');
+            const buttons = [...group.querySelectorAll('.mv-att-btn')];
+            buttons.forEach(b => { b.disabled = true; });
+            error.hidden = true;
+            try {
+                const body = new URLSearchParams({ lesson_id: box.dataset.lesson, student_id: btn.dataset.student, status: btn.dataset.status });
+                const resp = await fetch(box.dataset.url, { method: 'POST', headers: { 'X-CSRFToken': csrf }, body });
+                const data = await resp.json();
+                if (!data.ok) throw new Error(data.error);
+                buttons.forEach(b => { const on = b.dataset.status === data.state; b.classList.toggle('is-on', on); b.setAttribute('aria-pressed', on); });
+            } catch (err) {
+                error.textContent = err.message || "Belgilab bo'lmadi. Qayta urinib ko'ring.";
+                error.hidden = false;
+            } finally {
+                buttons.forEach(b => { b.disabled = false; });
+            }
+        });
+    });
+})();
+</script>
+{% endblock %}

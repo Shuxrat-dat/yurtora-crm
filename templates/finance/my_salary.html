@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% load mv %}
+
+{% block title %}Mening oyligim — Yurtora CRM{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <h1 class="text-3xl font-bold">Mening oyligim: {{ teacher.full_name }}</h1>
+
+    <!-- Oy tanlash -->
+    <div class="bg-white p-4 rounded-xl shadow-sm border">
+        <form method="get" class="flex gap-4 items-end">
+            <input type="hidden" name="teacher_id" value="{{ teacher.pk }}">
+            <div>
+                <label class="block text-xs font-semibold mb-1">Yil</label>
+                <input type="number" name="year" value="{{ year }}" class="px-3 py-2 border rounded-lg">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold mb-1">Oy</label>
+                <input type="number" name="month" value="{{ month }}" min="1" max="12" class="px-3 py-2 border rounded-lg">
+            </div>
+            <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg">Ko'rish</button>
+        </form>
+    </div>
+
+    {% if teacher_data %}
+    <div class="grid grid-cols-3 gap-6">
+        <div class="bg-indigo-50 border border-indigo-200 p-6 rounded-xl">
+            <div class="text-sm font-semibold">Hisoblangan</div>
+            <div class="text-2xl font-bold mt-2">{{ teacher_data.total_accrued|som }}</div>
+        </div>
+        <div class="bg-emerald-50 border border-emerald-200 p-6 rounded-xl">
+            <div class="text-sm font-semibold">To'langan</div>
+            <div class="text-2xl font-bold mt-2">{{ teacher_data.total_paid|som }}</div>
+        </div>
+        <div class="bg-amber-50 border border-amber-200 p-6 rounded-xl">
+            <div class="text-sm font-semibold">Qoldiq</div>
+            <div class="text-2xl font-bold mt-2">{{ teacher_data.balance|som }}</div>
+        </div>
+    </div>
+
+    {% if teacher_data.groups %}
+    <div class="bg-white p-6 rounded-xl shadow-sm border">
+        <h2 class="text-lg font-bold mb-4">Guruhlar bo'yicha</h2>
+        {% for g in teacher_data.groups %}
+        <div class="flex justify-between p-3 bg-slate-50 rounded-lg mb-2">
+            <span>{{ g.group.name }} · {% include "finance/_percent_badge.html" with percent=g.percent source=g.source %}</span>
+            <span class="font-bold">{% if g.missing %}—{% else %}{{ g.amount|som }}{% endif %}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% else %}
+    <p class="text-slate-500">Ma'lumot topilmadi.</p>
+    {% endif %}
+</div>
+{% endblock %}

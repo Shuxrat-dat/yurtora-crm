@@ -1,0 +1,37 @@
+<!-- Kunlik statistika oynasi: kirgandan keyin bosh sahifada bir marta ochiladi -->
+<div id="ds-modal" class="mv-ds" hidden
+     data-url="{% url 'accounts:daily_stats' %}"
+     data-auto-open="{% if auto_open_daily_stats %}1{% else %}0{% endif %}"
+     data-today="{{ stats_today }}"
+     data-yesterday="{{ stats_yesterday }}">
+    <div class="mv-ds-backdrop" data-ds-close></div>
+    <div class="mv-ds-card" role="dialog" aria-modal="true" aria-labelledby="ds-greeting">
+        <button type="button" class="mv-ds-x" data-ds-close aria-label="Yopish">&times;</button>
+
+        <header class="mv-ds-head">
+            <div class="mv-ds-head-main">
+                <h2 id="ds-greeting">Hurmatli {{ user.get_full_name|default:user.username }}</h2>
+                <div class="mv-ds-period">
+                    <label for="ds-period" class="mv-ds-caption">Davrni tanlang</label>
+                    <div class="mv-ds-period-row">
+                        <select id="ds-period">
+                            <option value="yesterday" selected>Kecha</option>
+                            <option value="today">Bugun</option>
+                            <option value="date">Tanlangan sana</option>
+                        </select>
+                        <input type="date" id="ds-date" hidden aria-label="Tanlangan sana"
+                               max="{{ stats_today }}" value="{{ stats_yesterday }}">
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div id="ds-body" class="mv-ds-body" aria-live="polite">
+            <p class="mv-ds-state">Yuklanmoqda…</p>
+        </div>
+
+        <footer class="mv-ds-foot">
+            <button type="button" class="mv-ds-close-btn" data-ds-close>Yopish</button>
+        </footer>
+    </div>
+</div>

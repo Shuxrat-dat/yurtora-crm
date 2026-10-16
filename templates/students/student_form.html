@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}
+{% if form.instance.pk %}O'quvchi ma'lumotlarini tahrirlash{% else %}Yangi o'quvchi qo'shish{% endif %} — Yurtora CRM
+{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <div class="bg-white p-6 sm:p-8 rounded-xl shadow-sm border border-slate-200">
+        <div class="mb-6 pb-4 border-b border-slate-100 flex items-center justify-between">
+            <h1 class="text-xl font-bold text-slate-900">
+                {% if form.instance.pk %}O'quvchi ma'lumotlarini tahrirlash{% else %}Yangi o'quvchi qo'shish{% endif %}
+            </h1>
+            <a href="{% if form.instance.pk %}{% url 'students:student_detail' form.instance.pk %}{% else %}{% url 'students:student_list' %}{% endif %}" class="text-sm text-slate-500 hover:text-slate-800">
+                Bekor qilish
+            </a>
+        </div>
+
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+
+            {% if form.errors %}
+            <div class="p-4 bg-red-50 text-red-700 rounded-lg text-sm border border-red-200">
+                <p class="font-semibold">Iltimos, kiritilgan ma'lumotlarni tekshiring:</p>
+                <ul class="list-disc list-inside mt-1">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <li>{{ field.label }}: {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Ism *</label>
+                    {{ form.first_name }}
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Familiya *</label>
+                    {{ form.last_name }}
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Otasining ismi</label>
+                    {{ form.middle_name }}
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Telefon raqami *</label>
+                    {{ form.phone }}
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Tug'ilgan sanasi</label>
+                    {{ form.birth_date }}
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Jinsi</label>
+                    {{ form.gender }}
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Maktabi / O'qish joyi</label>
+                    {{ form.school }}
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Qayerdan bildi (manba)</label>
+                    {{ form.source }}
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Manzili</label>
+                    {{ form.address }}
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Holati</label>
+                    {{ form.status }}
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Markazga kelgan sana</label>
+                    {{ form.joined_date }}
+                </div>
+
+                {% if not form.is_blacklisted.disabled %}
+                <div class="sm:col-span-2 p-4 bg-rose-50 border border-rose-200 rounded-lg space-y-3">
+                    <div class="flex items-center">
+                        {{ form.is_blacklisted }}
+                        <label for="{{ form.is_blacklisted.id_for_label }}" class="ml-2 text-sm font-semibold text-rose-800 cursor-pointer">
+                            Qora ro'yxatga kiritish
+                        </label>
+                    </div>
+                    {% if not form.blacklist_reason.disabled %}
+                    <div>
+                        <label class="block text-xs font-semibold text-rose-800 mb-1">Qora ro'yxatga kiritish sababi</label>
+                        {{ form.blacklist_reason }}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <div class="sm:col-span-2">
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Eslatmalar</label>
+                    {{ form.notes }}
+                </div>
+            </div>
+
+            {% if form.duplicate_of %}
+            <label class="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-900">
+                <input type="checkbox" name="allow_duplicate" value="on" class="h-4 w-4">
+                Bu boshqa o'quvchi: baribir yangi yozuv sifatida saqlash
+            </label>
+            {% endif %}
+
+            <div class="flex items-center justify-end space-x-3 pt-4 border-t border-slate-100">
+                <a href="{% if form.instance.pk %}{% url 'students:student_detail' form.instance.pk %}{% else %}{% url 'students:student_list' %}{% endif %}" class="px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition">
+                    Bekor qilish
+                </a>
+                <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg shadow-sm transition">
+                    Saqlash
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

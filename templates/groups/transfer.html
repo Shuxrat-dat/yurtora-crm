@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load mv %}
+
+{% block title %}Guruhni almashtirish — Yurtora CRM{% endblock %}
+
+{% block content %}
+<div class="max-w-xl">
+    <a href="{% url 'groups:group_detail' group.pk %}" class="text-sm text-indigo-600">&larr; {{ group.name }}</a>
+    <h1 class="mt-1 mb-1">Boshqa guruhga ko'chirish</h1>
+    <p class="text-sm text-slate-500 mb-5">{{ student.full_name }}: {{ group.name }} guruhidagi a'zolik ko'chirish sanasidan oldingi kunda tugaydi, yangi guruhda shu sanadan boshlanadi. Joriy balans: <strong>{{ balance|som }} so'm</strong>.</p>
+    <form method="post" class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4" data-once>
+        {% csrf_token %}
+        {% if form.non_field_errors %}<div class="mv-alert mv-alert--error">{{ form.non_field_errors }}</div>{% endif %}
+        {% for field in form %}
+        {% if field.name != 'carry_balance' or can_carry %}
+        <div>
+            {% if field.name == 'carry_balance' %}
+            <label class="flex items-center gap-2 text-sm text-slate-700">{{ field }} {{ field.label }}</label>
+            {% else %}
+            <label for="{{ field.id_for_label }}" class="block text-sm font-semibold text-slate-700 mb-1">{{ field.label }}</label>
+            {{ field }}
+            {% endif %}
+            {% for error in field.errors %}<p class="text-sm text-red-700 mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        {% endif %}
+        {% endfor %}
+        <div class="flex justify-end gap-3 pt-3 border-t border-slate-100">
+            <a href="{% url 'groups:group_detail' group.pk %}" class="mv-btn">Bekor qilish</a>
+            <button type="submit" class="mv-btn mv-btn--primary">Ko'chirish</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+{% load mv %}
+
+{% block title %}{{ group.name }} — Yurtora CRM{% endblock %}
+
+{% block content %}
+<div class="mv-card-layout mv-group-layout">
+    <!-- ===== Chap: guruh ma'lumotlari va o'quvchilar ===== -->
+    <div class="mv-group-side">
+        <aside class="mv-profile">
+            <div class="mv-profile-top">
+                {% if group.status == 'active' %}<span class="mv-pill mv-pill--ok">Faol</span>{% else %}<span class="mv-pill">Yopilgan</span>{% endif %}
+                {% if can_manage %}
+                <a href="{% url 'groups:group_edit' group.pk %}" class="mv-btn mv-btn--ghost-dark" aria-label="Guruhni tahrirlash">Tahrirlash</a>
+                {% endif %}
+            </div>
+            <div class="mv-profile-body">
+                <h1 class="mv-profile-name">{{ group.name }}</h1>
+                <p><span class="mv-grp mv-tone-{{ group.pk|tone }}">{{ group.course.name }}</span></p>
+                <dl class="mv-profile-list mt-3">
+                    <div><dt>Oylik to'lov</dt><dd>{{ group.course.monthly_price|som }} so'm</dd></div>
+                    <div><dt>O'quvchilar</dt><dd>{{ group.active_students_count }} / {{ group.max_students }}</dd></div>
+                    <div><dt>Boshlanishi</dt><dd>{{ group.start_date|date:"d.m.Y" }}</dd></div>
+                    <div><dt>Tugashi</dt><dd>{{ group.end_date|date:"d.m.Y"|default:"—" }}</dd></div>
+                </dl>
+
+                <h2 class="mv-side-title">Dars kunlari</h2>
+                <ul class="mv-slot-list">
+                    {% for row in schedule_rows %}
+                    <li><strong>{{ row.day }}</strong> <span>{{ row.start|time:"H:i" }}–{{ row.end|time:"H:i" }}</span> <span class="mv-pill">{{ row.room }}</span></li>
+                    {% empty %}
+                    <li class="text-sm text-slate-500">Dars jadvali belgilanmagan.</li>
+                    {% endfor %}
+                </ul>
+
+                <h2 class="mv-side-title">O'qituvchi</h2>
+                <div class="flex items-center gap-3">
+                    <div class="mv-initials">{{ group.teacher.full_name|slice:":1" }}</div>
+                    <div class="min-w-0">
+                        {% if can_manage %}<a href="{% url 'teachers:teacher_profile' group.teacher.pk %}" class="font-semibold">{{ group.teacher.full_name }}</a>{% else %}<span class="font-semibold">{{ group.teacher.full_name }}</span>{% endif %}
+                        {% if can_manage %}<p class="text-sm text-slate-500">{{ group.teacher.phone }}</p>{% endif %}
+                        {% if percent_info and group.teacher.pay_type == 'percent' %}<p class="text-sm mt-1">Ish haqi foizi: {% include "finance/_percent_badge.html" with percent=percent_info.0 source=percent_info.1 %}</p>{% endif %}
+                    </div>
+                </div>
+            </div>
+            {% if can_manage and group.status == 'active' %}
+            <div class="mv-profile-actions">
+                <button type="button" class="mv-btn mv-btn--primary" data-modal-open="enroll-modal">
+                    <svg class="mv-ico" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+                    O'quvchi qo'shish
+                </button>
+            </div>
+            {% endif %}
+        </aside>
+
+        <section class="mv-panel" aria-labelledby="members-title">
+            <h2 id="members-title" class="mv-side-title">O'quvchilar ({{ members|length }})</h2>
+            <div class="overflow-x-auto">
+                <table class="mv-members">
+                    <tbody>
+                        {% for e in members %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'students:student_detail' e.student.pk %}" class="font-semibold">{{ e.student.full_name }}</a>
+                                {% if e.status == 'trial' %}<span class="mv-pill mv-pill--gold">Sinov</span>{% elif e.status == 'frozen' %}<span class="mv-pill mv-pill--cyan">Muzlatilgan</span>{% endif %}
+                            </td>
+                            {% if can_manage %}
+                            <td class="text-right whitespace-nowrap"><span class="mv-balance mv-balance--sm {% if e.balance < 0 %}is-debt{% elif e.balance > 0 %}is-plus{% endif %}">{{ e.balance|som }}</span></td>
+                            <td class="text-right">
+                                <details class="mv-menu">
+                                    <summary aria-label="{{ e.student.full_name }}: amallar"><svg class="mv-ico" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="12" cy="19" r="1.4"/></svg></summary>
+                                    <div class="mv-menu-list">
+                                        <a href="{% url 'students:student_detail' e.student.pk %}">Profil</a>
+                                        {% if e.status == 'trial' %}
+                                        <form method="post" action="{% url 'groups:group_trial_convert' group.pk e.pk %}">{% csrf_token %}<button type="submit">Sinovdan faolga o'tkazish</button></form>
+                                        {% elif e.status == 'active' %}
+                                        <form method="post" action="{% url 'groups:group_freeze' group.pk e.pk %}">{% csrf_token %}<button type="submit">Muzlatish</button></form>
+                                        {% elif e.status == 'frozen' %}
+                                        <form method="post" action="{% url 'groups:group_unfreeze' group.pk e.pk %}">{% csrf_token %}<button type="submit">Muzlatishni bekor qilish</button></form>
+                                        {% endif %}
+                                        <a href="{% url 'groups:group_transfer' group.pk e.student.pk %}">Boshqa guruhga ko'chirish</a>
+                                        <form method="post" action="{% url 'groups:group_remove' group.pk e.student.pk %}" onsubmit="return confirm('O\'quvchini guruhdan chiqarmoqchimisiz?');">{% csrf_token %}<button type="submit" class="is-danger">Guruhdan chiqarish</button></form>
+                                    </div>
+                                </details>
+                            </td>
+                            {% endif %}
+                        </tr>
+                        {% empty %}
+                        <tr><td class="text-center text-slate-500 py-4">Guruhda hozircha o'quvchi yo'q.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% if past_enrollments %}
+            <details class="mt-3">
+                <summary class="text-sm text-slate-500 cursor-pointer">Guruhdan chiqqanlar ({{ past_enrollments|length }})</summary>
+                <ul class="mv-slot-list mt-2">
+                    {% for e in past_enrollments %}
+                    <li><a href="{% url 'students:student_detail' e.student.pk %}">{{ e.student.full_name }}</a> <span class="text-xs text-slate-500">{{ e.start_date|date:"d.m.Y" }}–{{ e.end_date|date:"d.m.Y"|default:"" }}</span></li>
+                    {% endfor %}
+                </ul>
+            </details>
+            {% endif %}
+        </section>
+    </div>
+
+    <!-- ===== O'ng: oylik davomat jadvali ===== -->
+    <section class="mv-panel mv-grid-panel" aria-labelledby="grid-title">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <h2 id="grid-title" class="mv-side-title" style="margin:0">Davomat — {{ month_label }}</h2>
+            <p class="mv-att-legend text-xs">
+                <span class="mv-cell is-present"></span>Keldi
+                <span class="mv-cell is-late"></span>Kechikdi
+                <span class="mv-cell is-excused"></span>Sababli
+                <span class="mv-cell is-absent"></span>Kelmadi
+            </p>
+        </div>
+        <nav class="mv-monthtabs" aria-label="Oylar">
+            {% for m in month_tabs %}
+            <a href="?month={{ m.value }}" class="{% if m.active %}is-active{% endif %}" {% if m.active %}aria-current="page"{% endif %}>{{ m.label }}</a>
+            {% endfor %}
+        </nav>
+
+        {% if grid.lessons %}
+        <div class="overflow-x-auto">
+            <table class="mv-att-grid" data-url="{% url 'groups:group_attendance' group.pk %}">
+                <thead>
+                    <tr>
+                        <th class="mv-att-name">O'quvchi</th>
+                        {% for lesson in grid.lessons %}
+                        <th class="{% if lesson.date == today %}is-today{% endif %}"><span>{{ lesson.date|date:"d" }}</span><small>{{ lesson.start_time|time:"H:i" }}</small></th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in grid.rows %}
+                    <tr>
+                        <th class="mv-att-name" scope="row"><a href="{% url 'students:student_detail' row.student.pk %}">{{ row.student.full_name }}</a></th>
+                        {% for cell in row.cells %}
+                        <td>
+                            {% if cell.editable %}
+                            <button type="button" class="mv-cell is-{{ cell.state }}" data-lesson="{{ cell.lesson.pk }}" data-student="{{ row.student.pk }}" data-state="{{ cell.state }}" title="{{ cell.label }}" aria-label="{{ row.student.full_name }}, {{ cell.lesson.date|date:'d.m' }}: {{ cell.label }}"></button>
+                            {% else %}
+                            <span class="mv-cell is-{{ cell.state }}" title="{{ cell.label }}" aria-label="{{ cell.label }}">{% if cell.state == 'upcoming' %}<svg class="mv-ico" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>{% endif %}</span>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <p id="att-error" class="text-sm text-red-700 mt-2" role="alert" hidden></p>
+        <p class="text-xs text-slate-500 mt-3">Katakni bosing: keldi → kelmadi → kechikdi → sababli. Kelajakdagi darslar qulflangan.</p>
+        {% else %}
+        <p class="mv-profile-empty">Bu oyda darslar yo'q.</p>
+        {% endif %}
+    </section>
+</div>
+
+{% if can_manage and group.status == 'active' %}
+<div id="enroll-modal" class="mv-modal" hidden>
+    <div class="mv-modal-backdrop" data-modal-close></div>
+    <div class="mv-modal-card" role="dialog" aria-modal="true" aria-labelledby="enroll-title">
+        <div class="mv-modal-head">
+            <h2 id="enroll-title">Guruhga o'quvchi qo'shish</h2>
+            <button type="button" class="mv-modal-x" data-modal-close aria-label="Yopish">&times;</button>
+        </div>
+        <form method="post" action="{% url 'groups:group_enroll' group.pk %}" class="mv-pay-form">
+            {% csrf_token %}
+            <label>O'quvchi {{ enroll_form.student }}</label>
+            <div class="grid grid-cols-2 gap-2">
+                <label>A'zolik turi {{ enroll_form.status }}</label>
+                <label>Boshlanish sanasi {{ enroll_form.start_date }}</label>
+            </div>
+            <button type="submit" class="mv-pay-submit">Qo'shish</button>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<script>
+(() => {
+    const modal = document.getElementById('enroll-modal');
+    if (modal) {
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('[data-modal-open="enroll-modal"]')) modal.hidden = false;
+            else if (e.target.closest('[data-modal-close]')) modal.hidden = true;
+        });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') modal.hidden = true; });
+    }
+
+    const table = document.querySelector('.mv-att-grid');
+    if (!table) return;
+    const error = document.getElementById('att-error');
+    const csrf = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+    const next = { unmarked: 'present', present: 'absent', absent: 'late', late: 'excused', excused: 'present' };
+    table.addEventListener('click', async (e) => {
+        const btn = e.target.closest('button.mv-cell');
+        if (!btn || btn.disabled) return;
+        btn.disabled = true;
+        error.hidden = true;
+        try {
+            const body = new URLSearchParams({ lesson_id: btn.dataset.lesson, student_id: btn.dataset.student, status: next[btn.dataset.state] || 'present' });
+            const resp = await fetch(table.dataset.url, { method: 'POST', headers: { 'X-CSRFToken': csrf }, body });
+            const data = await resp.json();
+            if (!data.ok) throw new Error(data.error);
+            btn.className = `mv-cell is-${data.state}`;
+            btn.dataset.state = data.state;
+            btn.title = data.label;
+        } catch (err) {
+            error.textContent = err.message || "Belgilab bo'lmadi. Qayta urinib ko'ring.";
+            error.hidden = false;
+        } finally {
+            btn.disabled = false;
+        }
+    });
+})();
+</script>
+{% endblock %}

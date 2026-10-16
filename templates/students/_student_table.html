@@ -1,0 +1,85 @@
+{% load mv %}
+<div id="student-table-container">
+    <p class="mb-3"><span class="mv-chip">Topildi: <b>{{ paginator.count }}</b> ta o'quvchi</span></p>
+    <div class="overflow-x-auto bg-white rounded-xl shadow-sm border border-slate-200">
+        <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
+            <thead class="bg-slate-50 text-slate-600 font-semibold">
+                <tr>
+                    <th scope="col" class="px-4 py-3.5 w-14">ID</th>
+                    <th scope="col" class="px-4 py-3.5">O'quvchi</th>
+                    <th scope="col" class="px-4 py-3.5">Telefon</th>
+                    <th scope="col" class="px-4 py-3.5">Guruhlar</th>
+                    {% if user.role != 'teacher' %}<th scope="col" class="px-4 py-3.5 text-right">Balans</th>{% endif %}
+                    <th scope="col" class="px-4 py-3.5">Izoh</th>
+                    <th scope="col" class="px-4 py-3.5 text-right"><span class="sr-only">Amallar</span></th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                {% for student in students %}
+                <tr class="align-top">
+                    <td class="px-4 py-3 text-slate-400 tabular-nums">{{ student.pk }}</td>
+                    <td class="px-4 py-3">
+                        <div class="flex items-center flex-wrap gap-1.5">
+                            <a href="{% url 'students:student_detail' student.pk %}" class="font-semibold text-slate-900 hover:text-red-700">{{ student.full_name }}</a>
+                            {% if student.status == 'frozen' %}<span class="mv-pill mv-pill--cyan">Muzlatilgan</span>{% elif student.status == 'archived' %}<span class="mv-pill">Arxiv</span>{% endif %}
+                            {% if student.is_blacklisted %}<span class="mv-pill mv-pill--red" title="{{ student.blacklist_reason|default:'Qora ro\'yxat' }}">Qora ro'yxat</span>{% endif %}
+                        </div>
+                        {% if student.school %}<p class="text-xs text-slate-500 mt-0.5">{{ student.school }}</p>{% endif %}
+                    </td>
+                    <td class="px-4 py-3 text-slate-600 whitespace-nowrap">{% if user.role != 'teacher' %}{{ student.phone }}{% else %}—{% endif %}</td>
+                    <td class="px-4 py-3">
+                        <div class="grid gap-1.5">
+                        {% for e in student.open_enrollments %}
+                            <div class="mv-grp mv-tone-{{ e.group_id|tone }}">
+                                <div class="flex items-center justify-between gap-2">
+                                    <span class="font-semibold">{{ e.group.name }}</span>
+                                    {% if e.status == 'trial' %}<span class="mv-pill mv-pill--gold">Sinov</span>{% elif e.status == 'frozen' %}<span class="mv-pill mv-pill--cyan">Muzlatilgan</span>{% endif %}
+                                    {% if user.role != 'teacher' and e.group_balance %}<span class="text-xs font-semibold {% if e.group_balance < 0 %}text-red-700{% else %}text-emerald-700{% endif %}">{{ e.group_balance|som }}</span>{% endif %}
+                                </div>
+                                <div class="text-xs text-slate-500">{{ e.schedule|default:"Jadval belgilanmagan" }}{% if e.group.teacher %}, {{ e.group.teacher.full_name }}{% endif %}</div>
+                            </div>
+                        {% empty %}
+                            <span class="text-slate-400 text-xs">Guruhsiz</span>
+                        {% endfor %}
+                        </div>
+                    </td>
+                    {% if user.role != 'teacher' %}
+                    <td class="px-4 py-3 text-right whitespace-nowrap">
+                        <span class="font-semibold {% if student.balance < 0 %}text-red-700{% elif student.balance > 0 %}text-emerald-700{% else %}text-slate-500{% endif %}">{{ student.balance|som }}</span>
+                        <span class="text-xs text-slate-400">so'm</span>
+                    </td>
+                    {% endif %}
+                    <td class="px-4 py-3 text-xs text-slate-500 max-w-[14rem]">{{ student.notes|truncatechars:60|default:"—" }}</td>
+                    <td class="px-4 py-3 text-right">
+                        <details class="mv-menu">
+                            <summary aria-label="Amallar: {{ student.full_name }}">
+                                <svg class="mv-ico" viewBox="0 0 24 24"><path d="M12 5h.01M12 12h.01M12 19h.01" stroke-width="3"/></svg>
+                            </summary>
+                            <div class="mv-menu-list">
+                                <a href="{% url 'students:student_detail' student.pk %}">Ko'rish</a>
+                                {% if user.role != 'teacher' %}
+                                <a href="{% url 'students:student_edit' student.pk %}">Tahrirlash</a>
+                                <button type="button" data-pay-student="{% url 'finance:payment_modal_form' student.pk %}">To'lov qabul qilish</button>
+                                <a href="{% url 'notifications:student_telegram' student.pk %}">Telegram</a>
+                                <a href="{% url 'students:student_edit' student.pk %}#id_notes">Izoh qo'shish</a>
+                                {% if not student.is_blacklisted %}<a href="{% url 'students:student_edit' student.pk %}#id_is_blacklisted" class="is-danger">Qora ro'yxatga olish</a>{% endif %}
+                                {% endif %}
+                            </div>
+                        </details>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="px-6 py-12 text-center text-slate-500">
+                        <p class="text-sm font-semibold text-slate-700">Qidiruv yoki filtr bo'yicha o'quvchi topilmadi.</p>
+                        <p class="mt-1 text-xs text-slate-500">Filtrlarni o'zgartiring yoki tozalang.</p>
+                        <a href="{% url 'students:student_list' %}" class="mt-4 inline-flex mv-btn">Filtrlarni tozalash</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% include "includes/_pager.html" %}
+</div>

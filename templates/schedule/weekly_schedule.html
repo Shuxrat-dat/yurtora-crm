@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+{% load schedule_tags mv %}
+
+{% block title %}Dars jadvali — Yurtora CRM{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+    <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+        <div>
+            <h1>Dars jadvali</h1>
+            <p class="text-sm text-slate-500 mt-1">Rangli belgi — guruh. Darsni bosib davomatni belgilang.</p>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+            <nav class="mv-viewtabs" aria-label="Ko'rinish">
+                <a href="?view=month{% if filter_qs %}&{{ filter_qs }}{% endif %}" class="{% if view_mode == 'month' %}is-active{% endif %}">Oy</a>
+                <a href="?view=week{% if filter_qs %}&{{ filter_qs }}{% endif %}" class="{% if view_mode == 'week' %}is-active{% endif %}">Hafta</a>
+                <a href="?view=rooms" class="{% if view_mode == 'rooms' %}is-active{% endif %}">Xonalar bandligi</a>
+            </nav>
+            {% if user.role != 'teacher' %}
+            <a href="{% url 'schedule:generate_lessons' %}" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg">Darslarni yaratish</a>
+            <a href="{% url 'schedule:slot_list' %}" class="px-3 py-2 bg-slate-100 text-sm font-medium rounded-lg">Jadval slotlari</a>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if view_mode != 'rooms' and user.role != 'teacher' %}
+    <!-- Filtrlar -->
+    <form method="get" class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
+        <input type="hidden" name="view" value="{{ view_mode }}">
+        {% if view_mode == 'month' %}<input type="hidden" name="month" value="{{ month_start|date:'Y-m' }}">{% else %}<input type="hidden" name="week" value="{{ week_start|date:'Y-m-d' }}">{% endif %}
+        <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Guruh</label>
+            <select name="group" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg">
+                <option value="">Barcha guruhlar</option>
+                {% for g in groups %}<option value="{{ g.id }}" {% if current_group == g.id|stringformat:"s" %}selected{% endif %}>{{ g.name }}</option>{% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">O'qituvchi</label>
+            <select name="teacher" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg">
+                <option value="">Barcha o'qituvchilar</option>
+                {% for t in teachers %}<option value="{{ t.id }}" {% if current_teacher == t.id|stringformat:"s" %}selected{% endif %}>{{ t.full_name }}</option>{% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Xona</label>
+            <select name="room" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg">
+                <option value="">Barcha xonalar</option>
+                {% for r in rooms %}<option value="{{ r.id }}" {% if current_room == r.id|stringformat:"s" %}selected{% endif %}>{{ r.name }}</option>{% endfor %}
+            </select>
+        </div>
+        <div><button type="submit" class="w-full px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg">Filtrlash</button></div>
+    </form>
+    {% endif %}
+
+    {% if view_mode == 'month' %}
+    <!-- ===== Oy ko'rinishi ===== -->
+    <div class="mv-monthbar">
+        <h2>{{ month_title }}<small>Bu oyda {{ month_total }} ta dars</small></h2>
+        <div class="mv-monthnav">
+            <a class="mv-btn" href="?view=month&month={{ prev_month }}{% if filter_qs %}&{{ filter_qs }}{% endif %}" aria-label="Oldingi oy">
+                <svg class="mv-ico" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>
+            </a>
+            {% if month_start|date:'Y-m' != this_month %}
+            <a class="mv-btn" href="?view=month&month={{ this_month }}{% if filter_qs %}&{{ filter_qs }}{% endif %}">Joriy oy</a>
+            {% endif %}
+            <a class="mv-btn" href="?view=month&month={{ next_month }}{% if filter_qs %}&{{ filter_qs }}{% endif %}" aria-label="Keyingi oy">
+                <svg class="mv-ico" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
+            </a>
+        </div>
+    </div>
+
+    <div class="mv-cal" role="grid" aria-label="{{ month_title }}">
+        <div class="mv-cal-head" role="row">
+            {% for name in weekday_names %}<div role="columnheader">{{ name }}</div>{% endfor %}
+        </div>
+        {% for week in month_weeks %}
+        <div class="mv-cal-week" role="row">
+            {% for day in week %}
+            {% with lessons=lessons_by_day|dict_get:day %}
+            <div role="gridcell" class="mv-cal-day{% if day.month != month_start.month %} is-out{% endif %}{% if day == today %} is-today{% endif %}{% if day.weekday >= 5 %} is-weekend{% endif %}">
+                <span class="mv-cal-num">{{ day.day }}</span>
+                <div class="mv-cal-list">
+                    {% for lesson in lessons %}
+                    {% if forloop.counter <= max_in_cell %}
+                    <a href="{% url 'schedule:lesson_detail' lesson.pk %}"
+                       class="mv-lsn mv-tone-{{ lesson.group_id|tone }}{% if lesson.status == 'held' %} is-held{% elif lesson.status == 'cancelled' %} is-cancelled{% endif %}"
+                       title="{{ lesson.group.name }}, {{ lesson.start_time|time:'H:i' }}–{{ lesson.end_time|time:'H:i' }}, {{ lesson.room.name }}, {{ lesson.teacher.full_name }}">
+                        <time>{{ lesson.start_time|time:"H:i" }}</time><span>{{ lesson.group.name }}</span>
+                    </a>
+                    {% endif %}
+                    {% endfor %}
+                    {% if lessons|length > max_in_cell %}
+                    <a class="mv-cal-more" href="?view=week&week={{ day|date:'Y-m-d' }}{% if filter_qs %}&{{ filter_qs }}{% endif %}">yana {{ lessons|length|add:more_offset }} ta</a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endwith %}
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+    <div class="mv-legend">
+        <span><i></i>Rejada</span>
+        <span><i style="--t: var(--mv-ink)"></i>To'q fon — o'tildi</span>
+        <span style="text-decoration: line-through">Bekor qilindi</span>
+    </div>
+
+    {% elif view_mode == 'week' %}
+    <!-- ===== Hafta ko'rinishi ===== -->
+    <div class="mv-monthbar">
+        <h2>{{ week_start|date:"d.m" }} — {{ week_end|date:"d.m.Y" }}<small>Haftalik ko'rinish</small></h2>
+        <div class="mv-monthnav">
+            <a class="mv-btn" href="?view=week&week={{ prev_week }}{% if filter_qs %}&{{ filter_qs }}{% endif %}" aria-label="Oldingi hafta"><svg class="mv-ico" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></a>
+            <a class="mv-btn" href="?view=week&week={{ next_week }}{% if filter_qs %}&{{ filter_qs }}{% endif %}" aria-label="Keyingi hafta"><svg class="mv-ico" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></a>
+        </div>
+    </div>
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
+        {% for day in week_days %}
+        {% with lessons=lessons_by_day|dict_get:day %}
+        <div class="bg-white rounded-xl shadow-sm border {% if day == today %}border-red-500 ring-2 ring-red-100{% else %}border-slate-200{% endif %} overflow-hidden">
+            <div class="px-3 py-2 border-b {% if day == today %}bg-red-50 border-red-200{% else %}bg-slate-50 border-slate-200{% endif %}">
+                <div class="text-xs font-semibold {% if day == today %}text-red-600{% else %}text-slate-500{% endif %}">{{ weekday_names|slice:forloop.counter|last }}</div>
+                <div class="text-xl font-bold {% if day == today %}text-red-700{% else %}text-slate-900{% endif %}">{{ day|date:"d" }}</div>
+            </div>
+            <div class="p-2 space-y-1.5 min-h-[100px]">
+                {% for lesson in lessons %}
+                <a href="{% url 'schedule:lesson_detail' lesson.pk %}"
+                   class="mv-lsn mv-tone-{{ lesson.group_id|tone }}{% if lesson.status == 'held' %} is-held{% elif lesson.status == 'cancelled' %} is-cancelled{% endif %}"
+                   style="display: block; white-space: normal"
+                   title="{{ lesson.room.name }}, {{ lesson.teacher.full_name }}">
+                    <time>{{ lesson.start_time|time:"H:i" }}–{{ lesson.end_time|time:"H:i" }}</time>
+                    <div class="font-semibold">{{ lesson.group.name }}</div>
+                    <div class="text-slate-500">{{ lesson.room.name }}</div>
+                </a>
+                {% empty %}
+                <div class="flex items-center justify-center h-16 text-slate-300 text-xs">Dars yo'q</div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endwith %}
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <!-- ===== Xonalar bandligi (hafta kuni bo'yicha) ===== -->
+    <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+        <div class="flex items-center justify-between gap-4 mb-4">
+            <div class="mv-tabs" role="tablist">
+                {% for day_name in weekday_names %}
+                <button type="button" role="tab" class="mv-tab weekday-tab{% if forloop.counter0 == today_weekday %} is-active{% endif %}"
+                        aria-selected="{% if forloop.counter0 == today_weekday %}true{% else %}false{% endif %}"
+                        data-weekday="{{ forloop.counter0 }}" onclick="changeWeekday({{ forloop.counter0 }})">{{ day_name }}</button>
+                {% endfor %}
+            </div>
+            <label class="flex items-center gap-2 text-sm text-slate-600">
+                Qadam
+                <select id="step-select" class="border border-slate-300 rounded-md px-3 py-1 text-sm" onchange="changeStep(this.value)">
+                    <option value="15">15 daqiqa</option>
+                    <option value="30" selected>30 daqiqa</option>
+                    <option value="60">60 daqiqa</option>
+                </select>
+            </label>
+        </div>
+        <div id="schedule-grid-container"
+             hx-get="{% url 'accounts:dashboard_schedule_grid' %}?weekday={{ today_weekday }}&step=30"
+             hx-trigger="load" hx-swap="innerHTML">
+            <div class="text-center py-8 text-slate-400">Yuklanmoqda…</div>
+        </div>
+    </section>
+    <script>
+    function changeWeekday(weekday) {
+        const step = document.getElementById('step-select').value;
+        document.querySelectorAll('.weekday-tab').forEach(tab => {
+            const active = parseInt(tab.dataset.weekday, 10) === weekday;
+            tab.classList.toggle('is-active', active);
+            tab.setAttribute('aria-selected', active ? 'true' : 'false');
+        });
+        htmx.ajax('GET', `{% url 'accounts:dashboard_schedule_grid' %}?weekday=${weekday}&step=${step}`, '#schedule-grid-container');
+    }
+    function changeStep(step) {
+        const active = document.querySelector('.weekday-tab.is-active');
+        const weekday = active ? active.dataset.weekday : {{ today_weekday }};
+        htmx.ajax('GET', `{% url 'accounts:dashboard_schedule_grid' %}?weekday=${weekday}&step=${step}`, '#schedule-grid-container');
+    }
+    </script>
+    {% endif %}
+</div>
+{% endblock %}

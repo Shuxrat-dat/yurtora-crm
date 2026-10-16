@@ -1,0 +1,531 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Chek Sozlamalari — Yurtora CRM{% endblock %}
+
+{% block extra_head %}
+<style>
+    .chek-input {
+        width: 100%;
+        padding: 0.65rem 0.85rem;
+        background-color: #fff;
+        border: 1px solid #cbd5e1;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        color: #1e293b;
+        transition: all 0.2s ease;
+    }
+    .chek-input:focus {
+        outline: none;
+        border-color: #1a237e;
+        box-shadow: 0 0 0 3px rgba(26, 35, 126, 0.12);
+    }
+    .chek-btn-save {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        background-color: #1a237e;
+        color: #ffffff;
+        font-size: 0.875rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border-radius: 0.5rem;
+        transition: background-color 0.2s ease;
+    }
+    .chek-btn-save:hover {
+        background-color: #121858;
+    }
+    .chek-switch {
+        position: relative;
+        display: inline-block;
+        width: 44px;
+        height: 24px;
+        flex-shrink: 0;
+    }
+    .chek-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    .chek-slider {
+        position: absolute;
+        cursor: pointer;
+        inset: 0;
+        background-color: #cbd5e1;
+        transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        border-radius: 24px;
+    }
+    .chek-slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        border-radius: 50%;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+    }
+    .chek-switch input:checked + .chek-slider {
+        background-color: #1a237e;
+    }
+    .chek-switch input:checked + .chek-slider:before {
+        transform: translateX(20px);
+    }
+    .receipt-paper {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.75rem;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+    }
+    .receipt-paper svg {
+        display: block;
+        max-width: 100%;
+        height: auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-2 sm:px-4 py-4">
+
+    <!-- Sarlavha va Breadcrumbs -->
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-slate-800 tracking-tight">Chek Sozlamalari</h1>
+        <div class="text-xs text-slate-400 mt-1 flex items-center gap-1.5 font-medium">
+            <span>Sozlamalar</span>
+            <span>/</span>
+            <span class="text-slate-600">Chek sozlamalari</span>
+        </div>
+    </div>
+
+    <form method="post" id="receipt-settings-form" class="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
+        {% csrf_token %}
+        <input type="hidden" name="logo_position" id="id_logo_position" value="{{ form.logo_position.value|default:'top' }}">
+
+        <!-- CHAP TOMON: SOZLAMALAR -->
+        <div class="xl:col-span-6 space-y-6">
+
+            <!-- 1. Chek yuqori qismi -->
+            <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+                <h2 class="text-base font-bold text-slate-900 mb-4">Chek yuqori qismi</h2>
+
+                <div class="space-y-4">
+                    <div>
+                        <label for="id_center_name" class="block text-xs font-semibold text-slate-500 mb-1.5">Markaz nomi</label>
+                        <input type="text" name="center_name" id="id_center_name" value="{{ form.center_name.value|default:'' }}" class="chek-input" placeholder="Masalan: Ilm Academy" maxlength="120" required>
+                        <p class="text-xs text-slate-500 mt-1">Menyu, kirish sahifasi, chek va Telegram xabarlarida ko'rsatiladi.</p>
+                        {% for e in form.center_name.errors %}<p class="text-sm text-red-700 mt-1">{{ e }}</p>{% endfor %}
+                    </div>
+
+                    <div>
+                        <label for="id_address" class="block text-xs font-semibold text-slate-500 mb-1.5">Manzil</label>
+                        <input type="text" name="address" id="id_address" value="{{ form.address.value|default:'' }}" class="chek-input" placeholder="Masalan: Toshkent sh., Chilonzor 12">
+                    </div>
+
+                    <div>
+                        <label for="id_phone" class="block text-xs font-semibold text-slate-500 mb-1.5">Telefon raqami</label>
+                        <input type="text" name="phone" id="id_phone" value="{{ form.phone.value|default:'' }}" class="chek-input" placeholder="+998 90 123 45 67">
+                    </div>
+
+                    <div class="pt-2">
+                        <button type="submit" class="chek-btn-save">SAQLASH</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Ko'rinadigan maydonlar -->
+            <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+                <h2 class="text-base font-bold text-slate-900 mb-4">Ko'rinadigan maydonlar</h2>
+
+                <div class="space-y-3.5 divide-y divide-slate-100">
+
+                    <label class="flex items-center gap-3 cursor-pointer pt-2 first:pt-0">
+                        <span class="chek-switch">
+                            <input type="checkbox" name="show_logo" id="id_show_logo" {% if form.show_logo.value %}checked{% endif %}>
+                            <span class="chek-slider"></span>
+                        </span>
+                        <span class="text-sm font-medium text-slate-700">Logotip</span>
+                    </label>
+
+                    <label class="flex items-center gap-3 cursor-pointer pt-3">
+                        <span class="chek-switch">
+                            <input type="checkbox" name="show_header" id="id_show_header" {% if form.show_header.value %}checked{% endif %}>
+                            <span class="chek-slider"></span>
+                        </span>
+                        <span class="text-sm font-medium text-slate-700">Chek yuqori qismi</span>
+                    </label>
+
+                    <label class="flex items-center gap-3 cursor-pointer pt-3">
+                        <span class="chek-switch">
+                            <input type="checkbox" name="show_address" id="id_show_address" {% if form.show_address.value %}checked{% endif %}>
+                            <span class="chek-slider"></span>
+                        </span>
+                        <span class="text-sm font-medium text-slate-700">Manzil</span>
+                    </label>
+
+                    <label class="flex items-center gap-3 cursor-pointer pt-3">
+                        <span class="chek-switch">
+                            <input type="checkbox" name="show_phone" id="id_show_phone" {% if form.show_phone.value %}checked{% endif %}>
+                            <span class="chek-slider"></span>
+                        </span>
+                        <span class="text-sm font-medium text-slate-700">Telefon raqami</span>
+                    </label>
+
+                    <label class="flex items-center gap-3 cursor-pointer pt-3">
+                        <span class="chek-switch">
+                            <input type="checkbox" name="show_issued_time" id="id_show_issued_time" {% if form.show_issued_time.value %}checked{% endif %}>
+                            <span class="chek-slider"></span>
+                        </span>
+                        <span class="text-sm font-medium text-slate-700">Chek chiqarilgan vaqt</span>
+                    </label>
+
+                    <label class="flex items-center gap-3 cursor-pointer pt-3">
+                        <span class="chek-switch">
+                            <input type="checkbox" name="show_payment_id" id="id_show_payment_id" {% if form.show_payment_id.value %}checked{% endif %}>
+                            <span class="chek-slider"></span>
+                        </span>
+                        <span class="text-sm font-medium text-slate-700">To'lov ID</span>
+                    </label>
+
+                    <label class="flex items-center gap-3 cursor-pointer pt-3">
+                        <span class="chek-switch">
+                            <input type="checkbox" name="show_student_info" id="id_show_student_info" {% if form.show_student_info.value %}checked{% endif %}>
+                            <span class="chek-slider"></span>
+                        </span>
+                        <span class="text-sm font-medium text-slate-700">O'quvchi ma'lumotlari</span>
+                    </label>
+
+                    <label class="flex items-center gap-3 cursor-pointer pt-3">
+                        <span class="chek-switch">
+                            <input type="checkbox" name="show_group_info" id="id_show_group_info" {% if form.show_group_info.value %}checked{% endif %}>
+                            <span class="chek-slider"></span>
+                        </span>
+                        <span class="text-sm font-medium text-slate-700">Guruh ma'lumotlari</span>
+                    </label>
+
+                    <label class="flex items-center gap-3 cursor-pointer pt-3">
+                        <span class="chek-switch">
+                            <input type="checkbox" name="show_payment_method" id="id_show_payment_method" {% if form.show_payment_method.value %}checked{% endif %}>
+                            <span class="chek-slider"></span>
+                        </span>
+                        <span class="text-sm font-medium text-slate-700">To'lov shakli</span>
+                    </label>
+
+                    <label class="flex items-center gap-3 cursor-pointer pt-3">
+                        <span class="chek-switch">
+                            <input type="checkbox" name="show_payment_date" id="id_show_payment_date" {% if form.show_payment_date.value %}checked{% endif %}>
+                            <span class="chek-slider"></span>
+                        </span>
+                        <span class="text-sm font-medium text-slate-700">To'lov sanasi</span>
+                    </label>
+
+                    <label class="flex items-center gap-3 cursor-pointer pt-3">
+                        <span class="chek-switch">
+                            <input type="checkbox" name="show_cashier" id="id_show_cashier" {% if form.show_cashier.value %}checked{% endif %}>
+                            <span class="chek-slider"></span>
+                        </span>
+                        <span class="text-sm font-medium text-slate-700">Kassir</span>
+                    </label>
+
+                    <label class="flex items-center gap-3 cursor-pointer pt-3">
+                        <span class="chek-switch">
+                            <input type="checkbox" name="show_amount" id="id_show_amount" {% if form.show_amount.value %}checked{% endif %}>
+                            <span class="chek-slider"></span>
+                        </span>
+                        <span class="text-sm font-medium text-slate-700">Summa</span>
+                    </label>
+
+                    <label class="flex items-center gap-3 cursor-pointer pt-3">
+                        <span class="chek-switch">
+                            <input type="checkbox" name="show_footer" id="id_show_footer" {% if form.show_footer.value %}checked{% endif %}>
+                            <span class="chek-slider"></span>
+                        </span>
+                        <span class="text-sm font-medium text-slate-700">Pastki qism</span>
+                    </label>
+
+                    <label class="flex items-center gap-3 cursor-pointer pt-3">
+                        <span class="chek-switch">
+                            <input type="checkbox" name="show_footer_text" id="id_show_footer_text" {% if form.show_footer_text.value %}checked{% endif %}>
+                            <span class="chek-slider"></span>
+                        </span>
+                        <span class="text-sm font-medium text-slate-700">Pastki qism matni</span>
+                    </label>
+
+                    <label class="flex items-center gap-3 cursor-pointer pt-3">
+                        <span class="chek-switch">
+                            <input type="checkbox" name="show_qr_code" id="id_show_qr_code" {% if form.show_qr_code.value %}checked{% endif %}>
+                            <span class="chek-slider"></span>
+                        </span>
+                        <span class="text-sm font-medium text-slate-700">QR kod</span>
+                    </label>
+
+                    <label class="flex items-center gap-3 cursor-pointer pt-3">
+                        <span class="chek-switch">
+                            <input type="checkbox" name="show_teacher" id="id_show_teacher" {% if form.show_teacher.value %}checked{% endif %}>
+                            <span class="chek-slider"></span>
+                        </span>
+                        <span class="text-sm font-medium text-slate-700">O'qituvchi</span>
+                    </label>
+
+                    <label class="flex items-center gap-3 cursor-pointer pt-3">
+                        <span class="chek-switch">
+                            <input type="checkbox" name="show_course_price" id="id_show_course_price" {% if form.show_course_price.value %}checked{% endif %}>
+                            <span class="chek-slider"></span>
+                        </span>
+                        <span class="text-sm font-medium text-slate-700">Kurs narxi</span>
+                    </label>
+
+                </div>
+            </div>
+
+            <!-- 3. Logotip joylashuvi -->
+            <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+                <h2 class="text-base font-bold text-slate-900 mb-3">Logotip joylashuvi</h2>
+
+                <div class="grid grid-cols-2 p-1 bg-slate-100 rounded-lg border border-slate-200">
+                    <button type="button" id="btn-pos-top" class="py-2.5 text-center text-xs font-bold rounded-md transition {% if form.logo_position.value == 'top' or not form.logo_position.value %}bg-[#1a237e] text-white shadow-sm{% else %}text-slate-600 hover:text-slate-900{% endif %}">
+                        YUQORIDA
+                    </button>
+                    <button type="button" id="btn-pos-bottom" class="py-2.5 text-center text-xs font-bold rounded-md transition {% if form.logo_position.value == 'bottom' %}bg-[#1a237e] text-white shadow-sm{% else %}text-slate-600 hover:text-slate-900{% endif %}">
+                        PASTDA
+                    </button>
+                </div>
+            </div>
+
+            <!-- 4. Chek pastki qismi -->
+            <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+                <h2 class="text-base font-bold text-slate-900 mb-4">Chek pastki qismi</h2>
+
+                <div class="space-y-4">
+                    <div>
+                        <label for="id_footer_text" class="block text-xs font-semibold text-slate-500 mb-1.5">Pastki qism matni</label>
+                        <input type="text" name="footer_text" id="id_footer_text" value="{{ form.footer_text.value|default:'' }}" class="chek-input" placeholder="Masalan: Rahmat!">
+                    </div>
+
+                    <div class="pt-2">
+                        <button type="submit" class="chek-btn-save">SAQLASH</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- O'NG TOMON: KO'RINISHI (PREVIEW) -->
+        <div class="xl:col-span-6 xl:sticky xl:top-6">
+            <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+                <h2 class="text-base font-bold text-slate-900 mb-4">Ko'rinishi</h2>
+
+                <!-- Preview Chek qog'ozi -->
+                <div class="receipt-paper max-w-sm mx-auto p-6 sm:p-7 text-slate-800">
+
+                    <!-- Yuqoridagi Logotip -->
+                    <div id="pv-logo-top" class="text-center mb-3">
+                        <div class="inline-flex flex-col items-center justify-center bg-black text-white px-4 py-2 rounded-lg shadow-sm">
+                            <svg class="w-8 h-8 text-[#e62429]" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M3 4h3.5l5.5 8.5L17.5 4H21v16h-3.5V9.5L12 18l-5.5-8.5V20H3V4z"/>
+                            </svg>
+                            <div class="text-center leading-none mt-1">
+                                <span class="block font-black text-xs tracking-wider">{{ CENTER_NAME }}</span>
+                                <span class="block text-[8px] font-semibold tracking-widest text-slate-300">ACADEMY LC</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chek yuqori qismi (Sarlavha, Manzil, Telefon) -->
+                    <div id="pv-header" class="text-center mb-4">
+                        <div class="font-extrabold text-lg text-[#0d2167] tracking-wider uppercase mb-1">TO'LOV KVITANSIYASI</div>
+                        <div id="pv-address" class="text-xs text-slate-600 font-medium leading-relaxed">
+                            <span id="pv-address-text">{{ form.address.value|default:'' }}</span>
+                        </div>
+                        <div id="pv-phone" class="text-xs text-slate-600 font-medium">
+                            <span id="pv-phone-text">{{ form.phone.value|default:'+998939960109' }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Vaqt qatori -->
+                    <div id="pv-issued-time" class="flex justify-between items-center text-xs text-slate-600 font-medium py-2.5 mb-2 border-b border-dashed border-slate-200">
+                        <span>{% now "Y-m-d" %}</span>
+                        <span>{% now "H:i" %}</span>
+                    </div>
+
+                    <!-- Maydonlar ro'yxati -->
+                    <div class="text-xs space-y-2 py-1">
+                        <div id="pv-payment-id" class="flex justify-between py-1">
+                            <span class="text-slate-500 font-medium">ID</span>
+                            <span class="text-slate-800 font-semibold">12345</span>
+                        </div>
+
+                        <div id="pv-student-info" class="flex justify-between py-1">
+                            <span class="text-slate-500 font-medium">O'quvchi</span>
+                            <span class="text-slate-800 font-semibold">John Doe</span>
+                        </div>
+
+                        <div id="pv-group-info" class="flex justify-between py-1">
+                            <span class="text-slate-500 font-medium">Guruh</span>
+                            <span class="text-slate-800 font-semibold">Ingliz tili-1</span>
+                        </div>
+
+                        <div id="pv-course-price" class="flex justify-between py-1">
+                            <span class="text-slate-500 font-medium">Kurs narxi</span>
+                            <span class="text-slate-800 font-semibold">UZS 1,000,000</span>
+                        </div>
+
+                        <div id="pv-payment-method" class="flex justify-between py-1">
+                            <span class="text-slate-500 font-medium">To'lov turi</span>
+                            <span class="text-slate-800 font-semibold">Naqd</span>
+                        </div>
+
+                        <div id="pv-payment-date" class="flex justify-between py-1">
+                            <span class="text-slate-500 font-medium">To'lov sanasi</span>
+                            <span class="text-slate-800 font-semibold">{% now "Y-m-d" %}</span>
+                        </div>
+
+                        <div id="pv-cashier" class="flex justify-between py-1">
+                            <span class="text-slate-500 font-medium">To'lovni olgan</span>
+                            <span class="text-slate-800 font-semibold">Admin foydalanuvchi</span>
+                        </div>
+
+                        <div id="pv-teacher" class="flex justify-between py-1">
+                            <span class="text-slate-500 font-medium">O'qituvchi</span>
+                            <span class="text-slate-800 font-semibold">Avazbek ustoz</span>
+                        </div>
+                    </div>
+
+                    <!-- To'lov miqdori -->
+                    <div id="pv-amount" class="text-center my-4 py-3 border-y border-dashed border-slate-200">
+                        <div class="text-xs text-slate-500 font-medium">To'lov miqdori</div>
+                        <div class="text-2xl font-black text-[#0d2167] tracking-tight mt-0.5">UZS 100,000</div>
+                    </div>
+
+                    <!-- QR kod -->
+                    <div id="pv-qr-code" class="flex flex-col items-center justify-center my-4">
+                        <div class="w-24 h-24 p-1.5 bg-white border border-slate-200 rounded-lg flex items-center justify-center shadow-xs">
+                            {{ preview_qr_svg|safe }}
+                        </div>
+                    </div>
+
+                    <!-- Pastdagi Logotip -->
+                    <div id="pv-logo-bottom" class="text-center my-3" style="display: none;">
+                        <div class="inline-flex flex-col items-center justify-center bg-black text-white px-4 py-2 rounded-lg shadow-sm">
+                            <svg class="w-8 h-8 text-[#e62429]" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M3 4h3.5l5.5 8.5L17.5 4H21v16h-3.5V9.5L12 18l-5.5-8.5V20H3V4z"/>
+                            </svg>
+                            <div class="text-center leading-none mt-1">
+                                <span class="block font-black text-xs tracking-wider">{{ CENTER_NAME }}</span>
+                                <span class="block text-[8px] font-semibold tracking-widest text-slate-300">ACADEMY LC</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pastki qism -->
+                    <div id="pv-footer" class="pt-3 border-t border-slate-200 text-center">
+                        <div id="pv-footer-text" class="text-xs text-slate-500 italic">
+                            {{ form.footer_text.value|default:'' }}
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('receipt-settings-form');
+    if (!form) return;
+
+    // Matn maydonlari jonli yangilanishi
+    const bindText = (inputId, targetId, fallback = '') => {
+        const input = document.getElementById(inputId);
+        const target = document.getElementById(targetId);
+        if (input && target) {
+            input.addEventListener('input', () => {
+                target.textContent = input.value.trim() || fallback;
+            });
+        }
+    };
+
+    bindText('id_address', 'pv-address-text', '');
+    bindText('id_phone', 'pv-phone-text', '+998939960109');
+    bindText('id_footer_text', 'pv-footer-text', '');
+
+    // Ko'rinadigan maydonlar (toggles) jonli yangilanishi
+    const bindToggle = (checkboxId, targetId) => {
+        const cb = document.getElementById(checkboxId);
+        const target = document.getElementById(targetId);
+        if (cb && target) {
+            const update = () => {
+                target.style.display = cb.checked ? '' : 'none';
+            };
+            cb.addEventListener('change', update);
+            update();
+        }
+    };
+
+    bindToggle('id_show_header', 'pv-header');
+    bindToggle('id_show_address', 'pv-address');
+    bindToggle('id_show_phone', 'pv-phone');
+    bindToggle('id_show_issued_time', 'pv-issued-time');
+    bindToggle('id_show_payment_id', 'pv-payment-id');
+    bindToggle('id_show_student_info', 'pv-student-info');
+    bindToggle('id_show_group_info', 'pv-group-info');
+    bindToggle('id_show_course_price', 'pv-course-price');
+    bindToggle('id_show_payment_method', 'pv-payment-method');
+    bindToggle('id_show_payment_date', 'pv-payment-date');
+    bindToggle('id_show_cashier', 'pv-cashier');
+    bindToggle('id_show_teacher', 'pv-teacher');
+    bindToggle('id_show_amount', 'pv-amount');
+    bindToggle('id_show_qr_code', 'pv-qr-code');
+    bindToggle('id_show_footer', 'pv-footer');
+    bindToggle('id_show_footer_text', 'pv-footer-text');
+
+    // Logotip ko'rsatilishi va joylashuvi
+    const showLogoCb = document.getElementById('id_show_logo');
+    const logoPosInput = document.getElementById('id_logo_position');
+    const pvLogoTop = document.getElementById('pv-logo-top');
+    const pvLogoBottom = document.getElementById('pv-logo-bottom');
+    const btnTop = document.getElementById('btn-pos-top');
+    const btnBottom = document.getElementById('btn-pos-bottom');
+
+    const updateLogo = () => {
+        const isShown = showLogoCb ? showLogoCb.checked : true;
+        const pos = logoPosInput ? logoPosInput.value : 'top';
+
+        if (pvLogoTop) pvLogoTop.style.display = (isShown && pos === 'top') ? '' : 'none';
+        if (pvLogoBottom) pvLogoBottom.style.display = (isShown && pos === 'bottom') ? '' : 'none';
+
+        if (btnTop && btnBottom) {
+            if (pos === 'top') {
+                btnTop.className = 'py-2.5 text-center text-xs font-bold rounded-md transition bg-[#1a237e] text-white shadow-sm';
+                btnBottom.className = 'py-2.5 text-center text-xs font-bold rounded-md transition text-slate-600 hover:text-slate-900';
+            } else {
+                btnTop.className = 'py-2.5 text-center text-xs font-bold rounded-md transition text-slate-600 hover:text-slate-900';
+                btnBottom.className = 'py-2.5 text-center text-xs font-bold rounded-md transition bg-[#1a237e] text-white shadow-sm';
+            }
+        }
+    };
+
+    if (showLogoCb) showLogoCb.addEventListener('change', updateLogo);
+
+    if (btnTop) {
+        btnTop.addEventListener('click', () => {
+            if (logoPosInput) logoPosInput.value = 'top';
+            updateLogo();
+        });
+    }
+
+    if (btnBottom) {
+        btnBottom.addEventListener('click', () => {
+            if (logoPosInput) logoPosInput.value = 'bottom';
+            updateLogo();
+        });
+    }
+
+    updateLogo();
+});
+</script>
+{% endblock %}

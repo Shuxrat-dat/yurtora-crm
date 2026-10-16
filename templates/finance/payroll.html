@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% load mv %}
+
+{% block title %}Oylik hisob-kitob — Yurtora CRM{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex justify-between items-center">
+        <h1 class="text-3xl font-bold text-slate-900">Oylik hisob-kitob</h1>
+        <div class="flex gap-2">
+            <a href="{% url 'finance:payroll_export' %}?year={{ year }}&month={{ month }}" class="mv-btn"><svg class="mv-ico" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>CSV yuklab olish</a>
+            {% if not is_closed and user.role == 'director' %}
+            <form method="post" action="{% url 'finance:payroll_close' %}" class="inline">
+                {% csrf_token %}
+                <input type="hidden" name="year" value="{{ year }}">
+                <input type="hidden" name="month" value="{{ month }}">
+                <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg" onclick="return confirm('Oyni yopmoqchimisiz?')">Oyni yopish</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Oy tanlash -->
+    <div class="bg-white p-4 rounded-xl shadow-sm border">
+        <form method="get" class="flex gap-4 items-end">
+            <div>
+                <label class="block text-xs font-semibold mb-1">Yil</label>
+                <input type="number" name="year" value="{{ year }}" class="px-3 py-2 border rounded-lg">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold mb-1">Oy</label>
+                <input type="number" name="month" value="{{ month }}" min="1" max="12" class="px-3 py-2 border rounded-lg">
+            </div>
+            <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg">Ko'rish</button>
+        </form>
+    </div>
+
+    {% if is_closed %}
+    <div class="bg-amber-50 border border-amber-200 p-4 rounded-lg">
+        <strong>Oy yopilgan.</strong> Ma'lumotlar o'zgarmas.
+    </div>
+    {% endif %}
+
+    {% if missing_percent %}
+    <div class="mv-alert mv-alert--warning" role="alert">
+        <div>
+            <strong>Ish haqi foizi sozlanmagan guruhlar bor.</strong>
+            Bu guruhlar bo'yicha ish haqi hisoblanmadi. Guruhda alohida foiz yoki o'qituvchi profilida asosiy foizni belgilang.
+            <ul class="mt-2 space-y-1">
+                {% for item in missing_percent %}
+                <li>
+                    <a href="{% url 'groups:group_edit' item.row.group.pk %}" class="font-semibold underline">{{ item.row.group.name }}</a>
+                    — {{ item.teacher.full_name }} (<a href="{% url 'teachers:teacher_edit' item.teacher.pk %}" class="underline">profil</a>){% if item.row.base %}, shu oydagi to'lovlar: {{ item.row.base|som }} so'm{% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Jadval -->
+    <div class="bg-white rounded-xl shadow-sm border overflow-x-auto">
+        <table class="min-w-full text-sm">
+            <thead class="bg-slate-50">
+                <tr>
+                    <th class="px-4 py-3 text-left">O'qituvchi</th>
+                    <th class="px-4 py-3 text-left">Turi</th>
+                    <th class="px-4 py-3 text-right">Hisoblangan</th>
+                    <th class="px-4 py-3 text-right">To'langan</th>
+                    <th class="px-4 py-3 text-right">Qoldiq</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y">
+                {% for teacher_id, data in payroll_data.items %}
+                <tr class="hover:bg-slate-50">
+                    <td class="px-4 py-3 font-semibold">{{ data.teacher.full_name }}</td>
+                    <td class="px-4 py-3">{% if data.pay_type == "fixed" %}Belgilangan oylik{% else %}Foiz asosida{% endif %}</td>
+                    <td class="px-4 py-3 text-right font-bold">{{ data.total_accrued|som }}</td>
+                    <td class="px-4 py-3 text-right text-emerald-600">{{ data.total_paid|som }}</td>
+                    <td class="px-4 py-3 text-right font-bold">{{ data.balance|som }}</td>
+                </tr>
+                {% for g in data.groups %}
+                <tr class="text-slate-600">
+                    <td class="pl-8 pr-4 py-2">{{ g.group.name }}</td>
+                    <td class="px-4 py-2">{% include "finance/_percent_badge.html" with percent=g.percent source=g.source %}</td>
+                    <td class="px-4 py-2 text-right">{% if g.missing %}—{% else %}{{ g.amount|som }}{% endif %}</td>
+                    <td class="px-4 py-2 text-right text-xs" colspan="2">asos: {{ g.base|som }} so'm</td>
+                </tr>
+                {% endfor %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

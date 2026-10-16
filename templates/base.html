@@ -1,0 +1,191 @@
+{% load static %}<!DOCTYPE html>
+<html lang="uz" class="h-full" data-theme="yurtora-dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Yurtora CRM{% endblock %}</title>
+
+    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}?v={{ ASSET_VERSION }}">
+    <script src="{% static 'vendor/htmx.min.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'css/app.css' %}?v={{ ASSET_VERSION }}">
+    <script src="{% static 'js/app.js' %}?v={{ ASSET_VERSION }}" defer></script>
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="font-sans">
+    {% with v=request.resolver_match.view_name|default:"" %}
+    {% if user.is_authenticated %}
+    <div class="mv-overlay" data-mv-nav-close></div>
+
+    <!-- Yon panel (sidebar) -->
+    <aside class="mv-side" aria-label="Asosiy menyu">
+        <a href="{% url 'accounts:home' %}" class="mv-brand" aria-label="Yurtora CRM — bosh sahifa">
+            <span class="mv-brand-mark" aria-hidden="true">{{ CENTER_INITIAL }}</span>
+            <span class="mv-brand-name"><b>{{ CENTER_NAME }}</b><small>{{ PRODUCT_NAME }}</small></span>
+        </a>
+
+        <nav class="mv-nav">
+            <div class="mv-sec">Asosiy</div>
+            <a href="{% url 'accounts:home' %}" class="mv-link{% if v == 'accounts:home' %} is-active{% endif %}">
+                <svg class="mv-ico" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>Bosh sahifa
+            </a>
+            <a href="{% url 'students:student_list' %}" class="mv-link{% if 'students:student' in v %} is-active{% endif %}">
+                <svg class="mv-ico" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 3-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16 4.5a3.5 3.5 0 010 7M18 14.5c2 .6 3.5 2.4 3.5 5.5"/></svg>O'quvchilar
+            </a>
+            {% if user.role != 'accountant' %}
+            <a href="{% url 'groups:group_list' %}" class="mv-link{% if 'groups:' in v %} is-active{% endif %}">
+                <svg class="mv-ico" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></svg>Guruhlar
+            </a>
+            <a href="{% url 'schedule:weekly_schedule' %}" class="mv-link{% if 'schedule:' in v and 'schedule:room' not in v %} is-active{% endif %}">
+                <svg class="mv-ico" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Jadval
+            </a>
+            {% endif %}
+            {% if user.role == 'accountant' %}
+            <div class="mv-sec">Moliya</div>
+            <a href="{% url 'finance:daily_cash' %}" class="mv-link{% if v == 'finance:daily_cash' %} is-active{% endif %}">
+                <svg class="mv-ico" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg>Kunlik kassa
+            </a>
+            <a href="{% url 'finance:debtors_list' %}" class="mv-link{% if 'debtors' in v %} is-active{% endif %}">
+                <svg class="mv-ico" viewBox="0 0 24 24"><path d="M12 8v5M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg>Qarzdorlar
+            </a>
+            {% endif %}
+            {% if user.role == 'teacher' %}
+            <a href="{% url 'teachers:my_profile' %}" class="mv-link{% if v == 'teachers:my_profile' %} is-active{% endif %}">
+                <svg class="mv-ico" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>Mening profilim
+            </a>
+            {% endif %}
+
+            {% if user.role == 'director' or user.role == 'administrator' %}
+            <div class="mv-sec">Boshqaruv</div>
+            <a href="{% url 'teachers:teacher_list' %}" class="mv-link{% if 'teachers:' in v %} is-active{% endif %}">
+                <svg class="mv-ico" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 3-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16 11l2 2 4-4"/></svg>O'qituvchilar
+            </a>
+            <a href="{% url 'courses:course_list' %}" class="mv-link{% if 'courses:' in v %} is-active{% endif %}">
+                <svg class="mv-ico" viewBox="0 0 24 24"><path d="M4 5a2 2 0 012-2h13v16H6a2 2 0 00-2 2V5z"/><path d="M4 19a2 2 0 012-2h13"/></svg>Kurslar
+            </a>
+            <a href="{% url 'schedule:room_list' %}" class="mv-link{% if 'schedule:room' in v %} is-active{% endif %}">
+                <svg class="mv-ico" viewBox="0 0 24 24"><path d="M4 21V4a1 1 0 011-1h10a1 1 0 011 1v17"/><path d="M16 8h3a1 1 0 011 1v12M2 21h20M12 12v.01"/></svg>Xonalar
+            </a>
+            {% endif %}
+
+            {% if user.role == 'director' %}
+            <div class="mv-sec">Moliya</div>
+            <a href="{% url 'finance:dashboard' %}" class="mv-link{% if 'finance:' in v and 'payroll' not in v and 'my_salary' not in v %} is-active{% endif %}">
+                <svg class="mv-ico" viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h13v4"/><path d="M3 7v11a2 2 0 002 2h15V9H5a2 2 0 01-2-2z"/><circle cx="16.5" cy="14.5" r="1"/></svg>Moliya
+            </a>
+            <a href="{% url 'finance:payroll' %}" class="mv-link{% if v == 'finance:payroll' %} is-active{% endif %}">
+                <svg class="mv-ico" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg>Ish haqi
+            </a>
+            <a href="{% url 'accounts:staff_list' %}" class="mv-link{% if 'accounts:staff' in v %} is-active{% endif %}">
+                <svg class="mv-ico" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 3-6 6.5-6s6.5 2.4 6.5 6"/><path d="M17 11v6M14 14h6"/></svg>Foydalanuvchilar
+            </a>
+            <a href="{% url 'core:audit_log' %}" class="mv-link{% if v == 'core:audit_log' %} is-active{% endif %}">
+                <svg class="mv-ico" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h7M9 17h7"/></svg>Jurnal
+            </a>
+            {% endif %}
+
+            {% if user.role == 'director' or user.role == 'administrator' %}
+            <div class="mv-sec">Sozlamalar</div>
+            <a href="{% url 'finance:receipt_settings' %}" class="mv-link{% if v == 'finance:receipt_settings' %} is-active{% endif %}">
+                <svg class="mv-ico" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Chek sozlamalari
+            </a>
+            {% endif %}
+
+            {% if user.is_staff %}
+            <div class="mv-sec">Tizim</div>
+            <a href="/admin/" class="mv-link">
+                <svg class="mv-ico" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z"/></svg>Admin
+            </a>
+            {% endif %}
+        </nav>
+
+        <!-- Foydalanuvchi bloki va POST orqali chiqish tugmasi -->
+        <div class="mv-user">
+            <span class="mv-user-ava" aria-hidden="true">{{ user.username|first }}</span>
+            <div class="mv-user-name" title="{{ user.username }}">{{ user.username }}</div>
+            <div class="mv-user-role">{{ user.get_role_display }}</div>
+            <a href="{% url 'accounts:password_change' %}" class="mv-user-pass">Parolni o'zgartirish</a>
+            <form method="post" action="{% url 'accounts:logout' %}">
+                {% csrf_token %}
+                <button type="submit" id="logout-button" class="mv-logout">Chiqish</button>
+            </form>
+        </div>
+    </aside>
+
+    <div class="mv-main">
+        <!-- Yuqori panel: mobil menyu tugmasi va tezkor "To'lov" -->
+        <header class="mv-header">
+            <button type="button" class="mv-burger" data-mv-nav-toggle aria-label="Menyuni ochish">
+                <svg class="mv-ico" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+            </button>
+            <span class="mv-header-brand">{{ CENTER_NAME }}</span>
+            <span class="mv-header-spacer"></span>
+            {% if user.role == 'administrator' or user.role == 'director' or user.role == 'accountant' %}
+            <button type="button" class="mv-pay-btn" data-pay-open>
+                <svg class="mv-ico" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg>
+                To'lov qabul qilish
+            </button>
+            {% endif %}
+        </header>
+    {% endif %}
+
+        <!-- Asosiy sahifa kontenti -->
+        <main class="{% if user.is_authenticated %}mv-content mv-page{% else %}mv-auth{% endif %}">
+            <!-- Tizim xabarlari -->
+            {% if messages %}
+            <div class="mb-2">
+                {% for message in messages %}
+                <div class="mv-alert {% if 'error' in message.tags %}mv-alert--error{% elif 'warning' in message.tags %}mv-alert--warning{% elif 'info' in message.tags %}mv-alert--info{% else %}mv-alert--success{% endif %}">
+                    <span>{{ message }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% block content %}{% endblock %}
+        </main>
+
+    {% if user.is_authenticated %}
+        <footer class="mv-footer">
+            Yurtora CRM, {% now "Y" %}
+        </footer>
+    </div>
+    {% endif %}
+    {% if user.role == 'administrator' or user.role == 'director' or user.role == 'accountant' %}
+    <!-- To'lov qo'shish oynasi: o'quvchini qidirish (kamida 3 harf) -->
+    <div id="pay-modal" class="mv-modal" hidden>
+        <div class="mv-modal-backdrop" data-pay-close></div>
+        <div class="mv-modal-card" role="dialog" aria-modal="true" aria-label="To'lov qo'shish">
+            <div class="mv-modal-head">
+                <h2>To'lov qo'shish</h2>
+                <button type="button" class="mv-modal-x" data-pay-close aria-label="Yopish">&times;</button>
+            </div>
+            <input type="search" id="pay-search" name="q" autocomplete="off"
+                   placeholder="Familiya yoki ism (kamida 3 harf)"
+                   data-url="{% url 'finance:payment_search' %}">
+            <div id="pay-results" aria-live="polite"></div>
+            <div id="pay-form"></div>
+        </div>
+    </div>
+    {% endif %}
+    {% endwith %}
+    <script>
+    // data-once: formani bir marta yuborish (qo'sh bosish ikkinchi so'rov yubormaydi)
+    document.addEventListener('submit', function (e) {
+        var form = e.target;
+        if (!form.hasAttribute || !form.hasAttribute('data-once')) return;
+        if (form.dataset.sent === '1') { e.preventDefault(); return; }
+        form.dataset.sent = '1';
+        setTimeout(function () {
+            form.querySelectorAll('button[type=submit]').forEach(function (b) { b.disabled = true; });
+        }, 0);
+    });
+    window.addEventListener('pageshow', function () {
+        document.querySelectorAll('form[data-once]').forEach(function (f) {
+            f.dataset.sent = '';
+            f.querySelectorAll('button[type=submit]').forEach(function (b) { b.disabled = false; });
+        });
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Excel import — Yurtora CRM{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-3xl">
+    <div>
+        <h1 class="text-2xl font-bold text-slate-900">O'quvchilarni Excel'dan import qilish</h1>
+        <p class="text-sm text-slate-500 mt-1">
+            .xlsx fayl (2 MB gacha, 2000 qatorgacha). Majburiy ustunlar: Familiya, Ism, Telefon.
+            Xato bo'lsa, hech narsa saqlanmaydi. Bazada bor o'quvchilar o'tkazib yuboriladi.
+        </p>
+        <a href="{% url 'students:student_import_template' %}" class="inline-block mt-2 text-sm text-indigo-600 hover:underline">Shablonni yuklab olish (.xlsx)</a>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
+        {% csrf_token %}
+        <input type="file" name="file" accept=".xlsx" required class="text-sm">
+        <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg">Import qilish</button>
+    </form>
+
+    {% if result %}
+    {% if result.errors %}
+    <div class="bg-red-50 border border-red-200 rounded-xl p-4" role="alert">
+        <h2 class="font-semibold text-red-800 mb-2">Xatolar topildi: hech narsa saqlanmadi</h2>
+        <ul class="text-sm text-red-700 space-y-1">
+            {% for number, message in result.errors %}
+            <li>{% if number %}{{ number }}-qator: {% endif %}{{ message }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    {% if result.skipped %}
+    <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+        <h2 class="font-semibold text-amber-800 mb-2">O'tkazib yuborildi: {{ result.skipped|length }}</h2>
+        <ul class="text-sm text-amber-700 space-y-1">
+            {% for number, message in result.skipped %}<li>{{ number }}-qator: {{ message }}</li>{% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    {% endif %}
+</div>
+{% endblock %}

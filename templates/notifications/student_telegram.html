@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% load mv %}
+
+{% block title %}Telegram — {{ student.full_name }} — Yurtora CRM{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-3xl">
+    <div>
+        <a href="{% url 'students:student_detail' student.pk %}" class="text-sm text-indigo-600 hover:underline">&larr; {{ student.full_name }}</a>
+        <h1 class="text-2xl font-bold text-slate-900 mt-1">Telegram bildirishnomalar</h1>
+    </div>
+
+    {% if not configured %}
+    <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
+        Telegram bot sozlanmagan (TELEGRAM_BOT_TOKEN va TELEGRAM_BOT_USERNAME). Havola yaratish va yuborish ishlamaydi.
+    </div>
+    {% endif %}
+
+    <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-3">
+        <h2 class="font-semibold text-slate-900">Ulangan chatlar</h2>
+        <ul class="text-sm text-slate-700 space-y-1">
+            {% for c in contacts %}
+            <li>{% if c.username %}@{{ c.username }}{% else %}chat {{ c.chat_id }}{% endif %} &middot; {{ c.created_at|date:"d.m.Y" }}{% if not c.is_active %} <span class="text-red-600">(o'chirilgan)</span>{% endif %}</li>
+            {% empty %}
+            <li class="text-slate-500">Hali hech kim ulanmagan.</li>
+            {% endfor %}
+        </ul>
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="create_link">
+            <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg">Ulanish havolasini yaratish</button>
+        </form>
+        {% if link %}
+        <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 text-sm">
+            <p class="text-slate-600 mb-1">Havolani ota-onaga yoki o'quvchiga yuboring (bir marta ishlaydi, 72 soat amal qiladi):</p>
+            <input type="text" readonly value="{{ link }}" onclick="this.select()" class="w-full px-2 py-1 border border-slate-300 rounded text-xs">
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-3">
+        <h2 class="font-semibold text-slate-900">Qarz eslatmasi</h2>
+        {% if debt %}
+        <p class="text-sm text-slate-700">Joriy qarz: <strong>{{ debt.total|som }} so'm</strong>
+            ({% for name, amount in debt.groups %}{{ name }}: {{ amount|som }}{% if not forloop.last %}, {% endif %}{% endfor %})</p>
+        <form method="post" onsubmit="return confirm('Eslatma Telegram orqali yuborilsinmi?')">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="send_reminder">
+            <button type="submit" {% if not configured or not contacts %}disabled{% endif %} class="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-slate-300 text-white text-sm font-medium rounded-lg">Eslatma yuborish</button>
+        </form>
+        {% else %}
+        <p class="text-sm text-slate-500">Qarz yo'q.</p>
+        {% endif %}
+    </div>
+
+    {% if logs %}
+    <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+        <h2 class="font-semibold text-slate-900 mb-2">Oxirgi yuborilganlar</h2>
+        <ul class="text-sm text-slate-700 space-y-1">
+            {% for log in logs %}
+            <li>{{ log.created_at|date:"d.m.Y H:i" }} &middot; {{ log.get_status_display }}{% if log.error %} ({{ log.error }}){% endif %}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% load mv %}
+
+{% with grid=schedule_grid %}
+{% if grid.grid_matrix %}
+<div class="overflow-x-auto">
+    <table class="min-w-full border-collapse text-xs">
+        <thead>
+            <tr>
+                <th class="sticky left-0 z-10 bg-slate-50 border border-slate-300 px-3 py-2 text-left font-semibold text-slate-700 min-w-[100px]">Xona</th>
+                {% for time_slot in grid.time_slots %}
+                <th class="border border-slate-300 px-2 py-2 text-center font-medium text-slate-600 whitespace-nowrap">{{ time_slot|time:"H:i" }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in grid.grid_matrix %}
+            <tr>
+                <td class="sticky left-0 z-10 bg-white border border-slate-300 px-3 py-2 font-medium text-slate-800">{{ row.room.name }}</td>
+                {% for cell in row.cells %}
+                {% if cell %}
+                <td colspan="{{ cell.colspan }}" class="border border-slate-300 mv-slot mv-tone-{{ cell.slot.group_id|tone }}{% if cell.has_conflict %} is-conflict{% endif %}">
+                    <a href="{% url 'groups:group_detail' cell.slot.group.id %}" title="{{ cell.slot.group.name }} — {{ cell.slot.group.teacher.full_name }}">
+                        <b>{{ cell.slot.start_time|time:"H:i" }}–{{ cell.slot.end_time|time:"H:i" }} {{ cell.slot.group.name }}</b>
+                        <small>{{ cell.slot.group.teacher.full_name|default:"O'qituvchi biriktirilmagan" }}</small>
+                        {% if cell.has_conflict %}<small class="text-red-700">Vaqt to'qnashuvi</small>{% endif %}
+                    </a>
+                </td>
+                {% else %}
+                <td class="border border-slate-300 p-2 bg-white h-16"></td>
+                {% endif %}
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="text-center py-8 text-slate-400">
+    <p>Ushbu kun uchun jadval topilmadi</p>
+</div>
+{% endif %}
+{% endwith %}
