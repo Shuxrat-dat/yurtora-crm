@@ -200,6 +200,15 @@ def import_students(file_obj):
     """Tekshiradi va xato bo'lmasa bitta tranzaksiyada saqlaydi."""
     result = parse_students(file_obj)
     if result.ok and result.rows:
+        from django.core.exceptions import ValidationError
+
+        from apps.tenants.billing import check_students_limit
+
+        try:
+            check_students_limit(len(result.rows))  # butun fayl limitga sig'masa, hech kim qo'shilmaydi
+        except ValidationError as exc:
+            result.errors.append((0, exc.message))
+            return result
         with transaction.atomic():
             Student.objects.bulk_create([Student(**row) for row in result.rows])
         result.created = len(result.rows)

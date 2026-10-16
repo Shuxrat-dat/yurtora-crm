@@ -72,3 +72,27 @@ def tls_check(request):
 def root_domain(request):
     """Shablonlar uchun: ommaviy sahifalarda manzil namunasi (ilm.yurtora.uz)."""
     return {"ROOT_DOMAIN": settings.ROOT_DOMAIN}
+
+
+BANNER_ROLES = ("director", "administrator", "accountant")
+
+
+def subscription_banner(request):
+    """CRM yuqorisida obuna haqida ogohlantirish (direktor, administrator, buxgalter uchun)."""
+    from . import billing
+
+    sub = getattr(request, "subscription", None)
+    user = getattr(request, "user", None)
+    if sub is None or user is None or not user.is_authenticated or getattr(user, "role", "") not in BANNER_ROLES:
+        return {}
+    days = sub.days_left
+    banner = None
+    if sub.status == billing.TRIAL and days is not None and days <= 7:
+        banner = ("info", f"Sinov davri: {days + 1} kun qoldi ({sub.access_until:%d.%m.%Y} gacha). Obunani oldindan to'lasangiz, sinov kunlari yo'qolmaydi.")
+    elif sub.status == billing.ACTIVE and days is not None and days <= 5:
+        banner = ("info", f"Obuna {sub.access_until:%d.%m.%Y} da tugaydi ({days + 1} kun qoldi).")
+    elif sub.status == billing.GRACE:
+        banner = ("warning", f"Obuna muddati {sub.access_until:%d.%m.%Y} da tugadi. {sub.read_only_from:%d.%m.%Y} dan faqat ko'rish rejimi yoqiladi.")
+    elif sub.status == billing.READ_ONLY:
+        banner = ("error", f"Faqat ko'rish rejimi: o'zgartirishlar obuna to'langach ochiladi. {sub.blocked_from:%d.%m.%Y} dan kirish to'xtatiladi.")
+    return {"SUBSCRIPTION_BANNER": banner} if banner else {}

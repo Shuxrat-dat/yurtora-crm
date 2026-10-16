@@ -354,6 +354,15 @@ class StudentCreateView(RoleRequiredMixin, CreateView):
         return kwargs
 
     def form_valid(self, form):
+        from django.core.exceptions import ValidationError
+
+        from apps.tenants.billing import check_students_limit
+
+        try:
+            check_students_limit(1)  # tarif limiti
+        except ValidationError as exc:
+            form.add_error(None, exc.message)
+            return self.form_invalid(form)
         messages.success(self.request, "O'quvchi muvaffaqiyatli qo'shildi.")
         return super().form_valid(form)
 
@@ -440,6 +449,16 @@ class StudentStatusView(RoleRequiredMixin, View):
         if new_status not in Student.Status.values:
             messages.error(request, "Noto'g'ri holat tanlandi.")
         elif new_status != student.status:
+            if student.status == Student.Status.ARCHIVED:
+                from django.core.exceptions import ValidationError
+
+                from apps.tenants.billing import check_students_limit
+
+                try:
+                    check_students_limit(1)  # arxivdan qaytgan o'quvchi yana limitga kiradi
+                except ValidationError as exc:
+                    messages.error(request, exc.message)
+                    return redirect("students:student_detail", pk=pk)
             student.change_status(new_status, request.POST.get("archive_reason", ""), user=request.user)
             messages.success(
                 request,

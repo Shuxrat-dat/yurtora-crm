@@ -64,6 +64,8 @@ PUBLIC_SCHEMA_URLCONF = "config.urls_public"
 TENANT_LIMIT_SET_CALLS = True
 # Yurtora asosiy domeni: markazlar <nom>.ROOT_DOMAIN manzilida (lokalda: ilm.localhost:8000)
 ROOT_DOMAIN = env.str("ROOT_DOMAIN", default="localhost")
+# Yurtora bilan bog'lanish (obuna/to'lov): bloklangan sahifada va "Obuna" sahifasida ko'rsatiladi
+YURTORA_SUPPORT = env.str("YURTORA_SUPPORT", default="")
 
 MIDDLEWARE = [
     "apps.tenants.middleware.CenterMiddleware",  # birinchi: manzil bo'yicha markaz sxemasini tanlaydi
@@ -94,6 +96,7 @@ TEMPLATES = [
                 "apps.core.context_processors.asset_version",
                 "apps.core.context_processors.branding",
                 "apps.tenants.views.root_domain",
+                "apps.tenants.views.subscription_banner",
             ],
         },
     },

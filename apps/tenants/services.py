@@ -48,15 +48,13 @@ def is_public_schema() -> bool:
 
 
 def active_center_schemas() -> list[str]:
-    """Faol markazlar sxemalari (bot va fon vazifalari har biri uchun alohida ishlaydi)."""
+    """To'liq ishlayotgan markazlar sxemalari (bot va fon vazifalari): obuna tugaganlarga xabar yuborilmaydi."""
+    from . import billing
     from .models import Center
 
     with schema_context(get_public_schema_name()):
-        return list(
-            Center.objects.filter(is_active=True)
-            .exclude(schema_name=get_public_schema_name())
-            .values_list("schema_name", flat=True)
-        )
+        centers = Center.objects.filter(is_active=True).exclude(schema_name=get_public_schema_name())
+        return [c.schema_name for c in centers if billing.subscription(c).full_access]
 
 
 def center_schema_is_active(schema: str) -> bool:
@@ -81,11 +79,20 @@ def create_center(*, name, subdomain, director_username, director_password, cont
     subdomain = normalize_subdomain(subdomain)
     validate_subdomain(subdomain)
     with schema_context(get_public_schema_name()), transaction.atomic():
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        from . import billing
+        from .models import Plan
+
         center = Center(
             schema_name=subdomain,
             name=name.strip(),
             contact_name=contact_name.strip(),
             contact_phone=contact_phone.strip(),
+            plan=Plan.objects.filter(is_default=True, is_active=True).first(),
+            trial_ends_at=timezone.localdate() + timedelta(days=billing.TRIAL_DAYS - 1),
         )
         center.save()  # sxema yaratiladi va markaz migratsiyalari bajariladi
         Domain.objects.create(domain=center_domain(subdomain), tenant=center, is_primary=True)

@@ -241,6 +241,15 @@ class StaffCreateView(RoleRequiredMixin, View):
 
         form = StaffCreateForm(request.POST)
         if form.is_valid():
+            from django.core.exceptions import ValidationError
+
+            from apps.tenants.billing import check_users_limit
+
+            try:
+                check_users_limit(1)  # tarif limiti (yangi foydalanuvchi faol bo'ladi)
+            except ValidationError as exc:
+                form.add_error(None, exc.message)
+                return render(request, self.template_name, {"form": form, "creating": True})
             user = form.save()
             messages.success(
                 request,
@@ -273,8 +282,19 @@ class StaffUpdateView(RoleRequiredMixin, View):
         from .forms import StaffUpdateForm
 
         target = self._user(pk)
+        was_active = target.is_active
         form = StaffUpdateForm(request.POST, instance=target, editor=request.user)
         if form.is_valid():
+            if not was_active and form.cleaned_data.get("is_active"):
+                from django.core.exceptions import ValidationError
+
+                from apps.tenants.billing import check_users_limit
+
+                try:
+                    check_users_limit(1)  # qayta yoqilgan foydalanuvchi limitga kiradi
+                except ValidationError as exc:
+                    form.add_error(None, exc.message)
+                    return render(request, self.template_name, {"form": form, "target": target})
             form.save()
             messages.success(request, "Ma'lumotlar saqlandi.")
             return redirect("accounts:staff_list")

@@ -14,5 +14,6 @@ urlpatterns = [
     path("audit/", include("apps.core.urls", namespace="core")),
     path("notifications/", include("apps.notifications.urls", namespace="notifications")),
     path("finance/", include("apps.finance.urls", namespace="finance")),
+    path("billing/", include("apps.tenants.billing_urls", namespace="billing")),
 ]
 
