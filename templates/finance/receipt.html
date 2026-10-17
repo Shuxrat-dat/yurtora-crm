@@ -48,7 +48,7 @@
         }
         .rc-logo-letter { font: 700 1.9rem/1 "Barlow", sans-serif; color: #0f8f82; }
         .rc-logo-name { font: 700 1rem/1 "Barlow", sans-serif; letter-spacing: .06em; margin-top: .15rem; }
-        .rc-logo-sub { font: 600 .55rem/1.2 "Barlow", sans-serif; letter-spacing: .2em; }
+        .rc-logo-img { display: block; max-width: 60%; max-height: 5rem; object-fit: contain; }
 
         .rc-head { text-align: center; margin-bottom: .9rem; }
         .rc-title { font: 700 1.6rem/1.05 "Barlow", sans-serif; letter-spacing: .03em; text-transform: uppercase; }
@@ -92,7 +92,7 @@
             .rc-logo-tile { padding: 1mm 2.5mm; border-radius: 1mm; }
             .rc-logo-letter { font-size: 12pt; }
             .rc-logo-name { font-size: 8pt; }
-            .rc-logo-sub { display: none; }
+            .rc-logo-img { max-height: 16mm; filter: grayscale(1) contrast(1.2); }
             .rc-head { margin-bottom: 1mm; }
             .rc-title { font-size: 12.5pt; white-space: nowrap; letter-spacing: 0; }
             .rc-sub { margin-top: .3mm; font-size: 7.5pt; line-height: 1.2; }
@@ -129,12 +129,7 @@
 
     <article class="rc-paper">
         {% if settings.show_logo and settings.logo_position == 'top' %}
-        <div class="rc-logo">
-            <div class="rc-logo-tile">
-                <span class="rc-logo-letter" aria-hidden="true">{{ CENTER_INITIAL }}</span>
-                <span class="rc-logo-name">{{ CENTER_NAME }}</span>
-            </div>
-        </div>
+        <div class="rc-logo">{% include "finance/_receipt_logo.html" %}</div>
         {% endif %}
 
         {% if settings.show_header %}
@@ -195,12 +190,7 @@
         {% endif %}
 
         {% if settings.show_logo and settings.logo_position == 'bottom' %}
-        <div class="rc-logo">
-            <div class="rc-logo-tile">
-                <span class="rc-logo-letter" aria-hidden="true">{{ CENTER_INITIAL }}</span>
-                <span class="rc-logo-name">{{ CENTER_NAME }}</span>
-            </div>
-        </div>
+        <div class="rc-logo">{% include "finance/_receipt_logo.html" %}</div>
         {% endif %}
 
         {% if settings.show_footer and settings.show_footer_text and settings.footer_text %}

@@ -100,7 +100,7 @@
         </div>
     </div>
 
-    <form method="post" id="receipt-settings-form" class="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
+    <form method="post" enctype="multipart/form-data" id="receipt-settings-form" class="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
         {% csrf_token %}
         <input type="hidden" name="logo_position" id="id_logo_position" value="{{ form.logo_position.value|default:'top' }}">
 
@@ -117,6 +117,18 @@
                         <input type="text" name="center_name" id="id_center_name" value="{{ form.center_name.value|default:'' }}" class="chek-input" placeholder="Masalan: Ilm Academy" maxlength="120" required>
                         <p class="text-xs text-slate-500 mt-1">Menyu, kirish sahifasi, chek va Telegram xabarlarida ko'rsatiladi.</p>
                         {% for e in form.center_name.errors %}<p class="text-sm text-red-700 mt-1">{{ e }}</p>{% endfor %}
+                    </div>
+
+                    <div>
+                        <label for="id_logo_file" class="block text-xs font-semibold text-slate-500 mb-1.5">Logotip rasmi</label>
+                        <input type="file" name="logo_file" id="id_logo_file" accept="image/png,image/jpeg,image/webp" class="chek-input">
+                        <p class="text-xs text-slate-500 mt-1">PNG, JPEG yoki WebP, 200 KB gacha. Yuklanmasa, chekda markaz nomining bosh harfi chiqadi.</p>
+                        {% for e in form.logo_file.errors %}<p class="text-sm text-red-700 mt-1">{{ e }}</p>{% endfor %}
+                        {% if settings.logo_data %}
+                        <label class="flex items-center gap-2 mt-2 text-sm text-slate-700 cursor-pointer">
+                            <input type="checkbox" name="logo_remove" id="id_logo_remove"> Joriy logotipni olib tashlash
+                        </label>
+                        {% endif %}
                     </div>
 
                     <div>
@@ -322,14 +334,10 @@
 
                     <!-- Yuqoridagi Logotip -->
                     <div id="pv-logo-top" class="text-center mb-3">
-                        <div class="inline-flex flex-col items-center justify-center bg-black text-white px-4 py-2 rounded-lg shadow-sm">
-                            <svg class="w-8 h-8 text-[#0f8f82]" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M3 4h3.5l5.5 8.5L17.5 4H21v16h-3.5V9.5L12 18l-5.5-8.5V20H3V4z"/>
-                            </svg>
-                            <div class="text-center leading-none mt-1">
-                                <span class="block font-black text-xs tracking-wider">{{ CENTER_NAME }}</span>
-                                <span class="block text-[8px] font-semibold tracking-widest text-slate-300">ACADEMY LC</span>
-                            </div>
+                        <img class="pv-logo-img mx-auto max-h-20 max-w-[60%] object-contain"{% if settings.logo_data %} src="{{ settings.logo_data }}"{% else %} hidden{% endif %} alt="{{ CENTER_NAME }}">
+                        <div class="pv-logo-tile inline-flex flex-col items-center justify-center bg-black text-white px-4 py-2 rounded-lg shadow-sm"{% if settings.logo_data %} hidden{% endif %}>
+                            <span class="pv-logo-letter block text-3xl font-bold leading-none text-[#0f8f82]">{{ CENTER_INITIAL }}</span>
+                            <span class="pv-logo-name block font-black text-xs tracking-wider mt-1">{{ CENTER_NAME }}</span>
                         </div>
                     </div>
 
@@ -340,7 +348,7 @@
                             <span id="pv-address-text">{{ form.address.value|default:'' }}</span>
                         </div>
                         <div id="pv-phone" class="text-xs text-slate-600 font-medium">
-                            <span id="pv-phone-text">{{ form.phone.value|default:'+998939960109' }}</span>
+                            <span id="pv-phone-text">{{ form.phone.value|default:'+998 90 123 45 67' }}</span>
                         </div>
                     </div>
 
@@ -369,7 +377,7 @@
 
                         <div id="pv-course-price" class="flex justify-between py-1">
                             <span class="text-slate-500 font-medium">Kurs narxi</span>
-                            <span class="text-slate-800 font-semibold">UZS 1,000,000</span>
+                            <span class="text-slate-800 font-semibold">1 000 000 so'm</span>
                         </div>
 
                         <div id="pv-payment-method" class="flex justify-between py-1">
@@ -396,7 +404,7 @@
                     <!-- To'lov miqdori -->
                     <div id="pv-amount" class="text-center my-4 py-3 border-y border-dashed border-slate-200">
                         <div class="text-xs text-slate-500 font-medium">To'lov miqdori</div>
-                        <div class="text-2xl font-black text-[#0d2167] tracking-tight mt-0.5">UZS 100,000</div>
+                        <div class="text-2xl font-black text-[#0d2167] tracking-tight mt-0.5">100 000 so'm</div>
                     </div>
 
                     <!-- QR kod -->
@@ -408,14 +416,10 @@
 
                     <!-- Pastdagi Logotip -->
                     <div id="pv-logo-bottom" class="text-center my-3" style="display: none;">
-                        <div class="inline-flex flex-col items-center justify-center bg-black text-white px-4 py-2 rounded-lg shadow-sm">
-                            <svg class="w-8 h-8 text-[#0f8f82]" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M3 4h3.5l5.5 8.5L17.5 4H21v16h-3.5V9.5L12 18l-5.5-8.5V20H3V4z"/>
-                            </svg>
-                            <div class="text-center leading-none mt-1">
-                                <span class="block font-black text-xs tracking-wider">{{ CENTER_NAME }}</span>
-                                <span class="block text-[8px] font-semibold tracking-widest text-slate-300">ACADEMY LC</span>
-                            </div>
+                        <img class="pv-logo-img mx-auto max-h-20 max-w-[60%] object-contain"{% if settings.logo_data %} src="{{ settings.logo_data }}"{% else %} hidden{% endif %} alt="{{ CENTER_NAME }}">
+                        <div class="pv-logo-tile inline-flex flex-col items-center justify-center bg-black text-white px-4 py-2 rounded-lg shadow-sm"{% if settings.logo_data %} hidden{% endif %}>
+                            <span class="pv-logo-letter block text-3xl font-bold leading-none text-[#0f8f82]">{{ CENTER_INITIAL }}</span>
+                            <span class="pv-logo-name block font-black text-xs tracking-wider mt-1">{{ CENTER_NAME }}</span>
                         </div>
                     </div>
 
@@ -450,7 +454,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     bindText('id_address', 'pv-address-text', '');
-    bindText('id_phone', 'pv-phone-text', '+998939960109');
+    bindText('id_phone', 'pv-phone-text', '+998 90 123 45 67');
     bindText('id_footer_text', 'pv-footer-text', '');
 
     // Ko'rinadigan maydonlar (toggles) jonli yangilanishi
@@ -526,6 +530,30 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     updateLogo();
+
+    // Ko'rinish: markaz nomi, bosh harf va tanlangan logotip rasmi
+    const nameInput = document.getElementById('id_center_name');
+    const fileInput = document.getElementById('id_logo_file');
+    const removeCb = document.getElementById('id_logo_remove');
+    const initialOf = (s) => { const m = (s || '').match(/[\p{L}\p{N}]/u); return m ? m[0].toUpperCase() : 'Y'; };
+    const firstImg = document.querySelector('.pv-logo-img');
+    const savedSrc = (firstImg && firstImg.getAttribute('src')) || '';
+    const showImage = (src) => {
+        document.querySelectorAll('.pv-logo-img').forEach((img) => { if (src) { img.src = src; img.hidden = false; } else { img.removeAttribute('src'); img.hidden = true; } });
+        document.querySelectorAll('.pv-logo-tile').forEach((tile) => { tile.hidden = !!src; });
+    };
+    if (nameInput) nameInput.addEventListener('input', () => {
+        document.querySelectorAll('.pv-logo-name').forEach((el) => { el.textContent = nameInput.value; });
+        document.querySelectorAll('.pv-logo-letter').forEach((el) => { el.textContent = initialOf(nameInput.value); });
+    });
+    if (fileInput) fileInput.addEventListener('change', () => {
+        const file = fileInput.files && fileInput.files[0];
+        if (!file) { showImage(removeCb && removeCb.checked ? '' : savedSrc); return; }
+        const reader = new FileReader();
+        reader.onload = () => showImage(reader.result);
+        reader.readAsDataURL(file);
+    });
+    if (removeCb) removeCb.addEventListener('change', () => showImage(removeCb.checked ? '' : savedSrc));
 });
 </script>
 {% endblock %}

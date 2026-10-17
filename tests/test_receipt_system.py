@@ -152,7 +152,7 @@ def test_payment_receipt_view_renders_with_settings(client, director_user, recei
 
     settings = ReceiptSettings.get_settings()
     settings.center_name = "Ilm Academy"
-    settings.phone = "+998939960109"
+    settings.phone = "+998901112233"
     settings.show_phone = True
     settings.save()
 
@@ -162,7 +162,7 @@ def test_payment_receipt_view_renders_with_settings(client, director_user, recei
     assert "TO'LOV KVITANSIYASI" in content
     assert "Doe John" in content
     assert "Avazbek ustoz" in content
-    assert "+998939960109" in content
+    assert "+998901112233" in content
     assert "Ilm Academy" in content  # markaz nomi chekda (logotip)
     assert "<svg" in content  # QR code present
 
@@ -176,5 +176,5 @@ def test_payment_receipt_view_renders_with_settings(client, director_user, recei
     response = client.get(url)
     assert response.status_code == 200
     content = response.content.decode("utf-8")
-    assert "+998939960109" not in content
+    assert "+998901112233" not in content
     assert "Rahmat, kutib qolamiz!" in content

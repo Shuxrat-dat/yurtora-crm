@@ -1,0 +1,4 @@
+{% if settings.logo_data %}<img class="rc-logo-img" src="{{ settings.logo_data }}" alt="{{ CENTER_NAME }}">{% else %}<div class="rc-logo-tile">
+    <span class="rc-logo-letter" aria-hidden="true">{{ CENTER_INITIAL }}</span>
+    <span class="rc-logo-name">{{ CENTER_NAME }}</span>
+</div>{% endif %}

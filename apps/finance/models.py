@@ -513,6 +513,8 @@ class ReceiptSettings(models.Model):
 
     # Ko'rinadigan maydonlar (toggles)
     show_logo = models.BooleanField(default=True, verbose_name="Logotip")
+    # Markazning o'z logotipi (data: URI, PNG/JPEG/WebP, <=200 KB). Bo'sh: markaz nomining bosh harfi
+    logo_data = models.TextField(blank=True, default="", verbose_name="Logotip rasmi")
     show_header = models.BooleanField(default=True, verbose_name="Chek yuqori qismi")
     show_address = models.BooleanField(default=True, verbose_name="Manzil")
     show_phone = models.BooleanField(default=True, verbose_name="Telefon raqami")

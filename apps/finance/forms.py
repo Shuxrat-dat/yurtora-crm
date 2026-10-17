@@ -95,8 +95,52 @@ class ExcusedCreditForm(forms.Form):
         return comment
 
 
+LOGO_MAX_BYTES = 200 * 1024
+# Faqat rastr rasmlar: SVG ichida skript bo'lishi mumkin
+_LOGO_SIGNATURES = (
+    (b"\x89PNG\r\n\x1a\n", "image/png"),
+    (b"\xff\xd8\xff", "image/jpeg"),
+)
+
+
+def logo_mime(head: bytes):
+    for signature, mime in _LOGO_SIGNATURES:
+        if head.startswith(signature):
+            return mime
+    if head[:4] == b"RIFF" and head[8:12] == b"WEBP":
+        return "image/webp"
+    return None
+
+
 class ReceiptSettingsForm(forms.ModelForm):
     """To'lov cheki sozlamalarini tahrirlash formasi."""
+
+    logo_file = forms.FileField(required=False, label="Logotip rasmi")
+    logo_remove = forms.BooleanField(required=False, label="Logotipni olib tashlash")
+
+    def clean_logo_file(self):
+        upload = self.cleaned_data.get("logo_file")
+        if not upload:
+            return None
+        if upload.size > LOGO_MAX_BYTES:
+            raise forms.ValidationError("Rasm hajmi 200 KB dan oshmasligi kerak.")
+        data = upload.read()
+        mime = logo_mime(data[:16])
+        if mime is None:
+            raise forms.ValidationError("Faqat PNG, JPEG yoki WebP rasm yuklash mumkin.")
+        import base64
+
+        return f"data:{mime};base64,{base64.b64encode(data).decode('ascii')}"
+
+    def save(self, commit=True):
+        obj = super().save(commit=False)
+        if self.cleaned_data.get("logo_remove"):
+            obj.logo_data = ""
+        elif self.cleaned_data.get("logo_file"):
+            obj.logo_data = self.cleaned_data["logo_file"]
+        if commit:
+            obj.save()
+        return obj
 
     class Meta:
         from apps.finance.models import ReceiptSettings
@@ -136,7 +180,7 @@ class ReceiptSettingsForm(forms.ModelForm):
             "phone": forms.TextInput(
                 attrs={
                     "class": "w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600",
-                    "placeholder": "+998939960109",
+                    "placeholder": "+998 90 123 45 67",
                 }
             ),
             "footer_text": forms.TextInput(

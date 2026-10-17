@@ -90,7 +90,7 @@ def test_salary_adjustment_and_payout_are_logged(director_user, world):
 
 def test_receipt_settings_change_is_logged(client, director_user):
     client.force_login(director_user)
-    client.post(reverse("finance:receipt_settings"), {"address": "Yangi manzil", "phone": "+998939960109", "footer_text": "x", "logo_position": "top"})
+    client.post(reverse("finance:receipt_settings"), {"address": "Yangi manzil", "phone": "+998901112233", "footer_text": "x", "logo_position": "top"})
     row = rows("finance.ReceiptSettings").latest("id")
     assert row.username == director_user.username and "address" in str(row.changes)
 

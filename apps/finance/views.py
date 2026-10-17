@@ -989,7 +989,7 @@ class ReceiptSettingsView(RoleRequiredMixin, View):
 
     def post(self, request):
         settings_obj = ReceiptSettings.get_settings()
-        form = ReceiptSettingsForm(request.POST, instance=settings_obj)
+        form = ReceiptSettingsForm(request.POST, request.FILES, instance=settings_obj)
         if form.is_valid():
             form.save()
             messages.success(request, "Chek sozlamalari muvaffaqiyatli saqlandi.")
