@@ -3,6 +3,10 @@
 # POSTGRES_PASSWORD (faqat harf/raqam — DATABASE_URL ichida ishlatiladi) va ROOT_DOMAIN (masalan yurtora.uz).
 # HTTPS ni `proxy` xizmati (Caddy) tugatadi: sertifikatni o'zi oladi va yangilaydi. 80 va 443 portlar ochiq bo'lishi kerak.
 # Yig'ish: faqat toza `git clone` dan (ishchi papkadagi tugallanmagan fayllar obrazga tushmasligi uchun).
+# Общий сервер (80/443 уже занимает чужой прокси): .env -> WEB_BIND=<адрес шлюза docker-сети прокси>, WEB_PORT=8021,
+# а `proxy` не запускается (он только в профиле standalone). Отдельный сервер: добавьте `--profile standalone`.
+name: yurtora
+
 x-logging: &default-logging
   driver: json-file
   options:
@@ -43,7 +47,7 @@ services:
       # Docker tarmog'ida baza "db" nomi bilan topiladi (.env dagi localhost ni almashtiradi)
       DATABASE_URL: postgres://${POSTGRES_USER:-yurtora_user}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-yurtora_crm}
     ports:
-      - "127.0.0.1:8000:8000"  # faqat localhost: tashqariga `proxy` orqali chiqariladi
+      - "${WEB_BIND:-127.0.0.1}:${WEB_PORT:-8000}:8000"  # faqat ichki manzil: tashqariga proksi orqali chiqariladi
     depends_on:
       db:
         condition: service_healthy
@@ -58,6 +62,7 @@ services:
     image: caddy:2-alpine
     container_name: yurtora_crm_proxy
     restart: unless-stopped
+    profiles: ["standalone"]
     ports:
       - "${HTTP_PORT:-80}:80"
       - "${HTTPS_PORT:-443}:443"
