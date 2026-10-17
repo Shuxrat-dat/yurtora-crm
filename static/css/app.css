@@ -99,7 +99,7 @@ body.mv-nav-open .mv-overlay { opacity: 1; pointer-events: auto; }
   background: rgba(255, 255, 255, .92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--mv-border);
 }
 .yt-search { position: relative; flex: 0 1 26rem; min-width: 0; }
-.yt-search .mv-ico { position: absolute; top: 50%; left: .8rem; width: 1.05rem; height: 1.05rem; color: var(--mv-muted); transform: translateY(-50%); pointer-events: none; }
+.yt-search > .mv-ico { position: absolute; top: 50%; left: .8rem; width: 1.05rem; height: 1.05rem; color: var(--mv-muted); transform: translateY(-50%); pointer-events: none; }
 .yt-search input { width: 100%; padding: .62rem .9rem .62rem 2.4rem; font-size: .92rem; border: 1px solid var(--mv-border); border-radius: .8rem; background: var(--mv-bg); }
 .yt-search input:focus { background: #fff; }
 .yt-spacer { flex: 1; }
@@ -751,3 +751,36 @@ a.yt-kpi:hover { border-color: color-mix(in srgb, var(--tone) 45%, #fff); }
 .yt-trend.is-flat { color: var(--mv-muted); }
 .yt-kpis:not(.is-shown) .yt-trend { visibility: hidden; }
 .yt-kpi-grid--small .yt-trend small { display: none; }
+
+/* ---------- Umumiy qidiruv (yuqori panel) ---------- */
+.yt-search input { padding-right: 4.2rem; }
+.yt-kbd { position: absolute; top: 50%; right: .6rem; transform: translateY(-50%); padding: .1rem .4rem; font: 600 .7rem/1.4 var(--mv-font); color: var(--mv-muted); background: #fff; border: 1px solid var(--mv-border); border-radius: .4rem; pointer-events: none; }
+.yt-search input:focus ~ .yt-kbd { display: none; }
+.yt-search-pop { position: absolute; top: calc(100% + .4rem); left: 0; right: 0; z-index: 60; }
+.yt-search-pop:empty { display: none; }
+.yt-sr { display: grid; max-height: min(70vh, 30rem); overflow-y: auto; padding: .35rem; background: #fff; border: 1px solid var(--mv-border); border-radius: .9rem; box-shadow: var(--mv-shadow-lg); }
+.yt-sr-sec { padding: .55rem .6rem .25rem; font-size: .72rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--mv-muted); }
+.yt-sr-item { display: flex; align-items: center; gap: .65rem; padding: .45rem .6rem; border-radius: .6rem; color: var(--mv-ink); }
+.yt-sr-item:is(:hover, :focus) { outline: none; background: var(--mv-primary-50); }
+.yt-sr-item .yt-ava { width: 2rem; height: 2rem; font-size: .72rem; }
+.yt-sr-ico { display: grid; place-items: center; flex: none; width: 2rem; height: 2rem; border-radius: .6rem; color: color-mix(in srgb, var(--t, var(--mv-primary)) 80%, #000); background: color-mix(in srgb, var(--t, var(--mv-primary)) 14%, #fff); }
+.yt-sr-ico .mv-ico { width: 1rem; height: 1rem; }
+.yt-sr-main { display: grid; min-width: 0; }
+.yt-sr-main b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .88rem; font-weight: 600; }
+.yt-sr-main small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .76rem; color: var(--mv-muted); }
+.yt-sr-all { padding: .4rem .6rem .5rem; font-size: .8rem; font-weight: 600; color: var(--mv-primary-dark); border-radius: .6rem; }
+.yt-sr-all:is(:hover, :focus) { outline: none; background: var(--mv-bg); }
+.yt-sr-empty { padding: .9rem .6rem; font-size: .88rem; color: var(--mv-muted); }
+@media (max-width: 639px) { .yt-kbd { display: none; } .yt-search input { padding-right: .9rem; } .yt-search-pop { position: fixed; top: 4.1rem; left: .75rem; right: .75rem; } }
+
+/* ---------- Qo'ng'iroqcha va eslatmalar ---------- */
+.yt-bell > summary { position: relative; }
+.yt-badge { position: absolute; top: -.35rem; right: -.35rem; display: grid; place-items: center; min-width: 1.15rem; height: 1.15rem; padding: 0 .25rem; font-size: .68rem; font-weight: 700; line-height: 1; color: #fff; background: var(--mv-red); border: 2px solid #fff; border-radius: 999px; }
+.yt-bell-list { min-width: 18rem; }
+.yt-bell-head { padding: .45rem .75rem .35rem; font-size: .9rem; font-weight: 700; color: var(--mv-ink); }
+.yt-alerts { display: grid; }
+.yt-alerts a { display: flex; align-items: center; gap: .6rem; padding: .55rem .75rem; border-radius: .6rem; font-size: .88rem; color: var(--mv-ink); }
+.yt-alerts a:hover { background: var(--mv-bg); }
+.yt-dot { flex: none; width: .55rem; height: .55rem; border-radius: 50%; background: var(--mv-muted); }
+.yt-dot--red { background: var(--mv-red); } .yt-dot--violet { background: #7c3aed; } .yt-dot--gold { background: #d97706; } .yt-dot--teal { background: var(--mv-primary); }
+@media (max-width: 639px) { .yt-bell-list { position: fixed; top: 4.1rem; left: .75rem; right: .75rem; min-width: 0; } }

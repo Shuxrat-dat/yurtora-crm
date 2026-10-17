@@ -1,0 +1,7 @@
+<details class="yt-dd yt-bell">
+    <summary class="yt-icon-btn" aria-label="Eslatmalar{% if alerts %}: {{ alerts|length }} ta{% endif %}"><svg class="mv-ico" viewBox="0 0 24 24"><path d="M6 8a6 6 0 1112 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 003.4 0"/></svg>{% if alerts %}<span class="yt-badge">{{ alerts|length }}</span>{% endif %}</summary>
+    <div class="yt-dd-list yt-dd-list--right yt-bell-list">
+        <div class="yt-bell-head">Eslatmalar</div>
+        {% include "accounts/_alerts_list.html" %}
+    </div>
+</details>

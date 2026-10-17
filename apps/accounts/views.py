@@ -14,8 +14,10 @@ from django.utils import timezone
 from django.views import View
 from django.views.generic import TemplateView
 
+from apps.core.alerts import build_alerts
 from apps.core.daily_stats import get_daily_stats, resolve_period
 from apps.core.filters import parse_int
+from apps.core.search import global_search
 from apps.core.services import (
     compute_room_occupancy,
     get_dashboard_metrics,
@@ -381,3 +383,19 @@ class SelfPasswordChangeView(LoginRequiredMixin, PasswordChangeView):
         for field in form.fields.values():
             field.widget.attrs.setdefault("class", "w-full px-3 py-2 border border-slate-300 rounded-lg")
         return form
+
+
+class GlobalSearchView(LoginRequiredMixin, View):
+    """Yuqori paneldagi qidiruv natijalari (HTMX bo'lagi)."""
+
+    def get(self, request):
+        result = global_search(request.user, request.GET.get("q", ""))
+        return render(request, "accounts/_search_results.html", {"result": result})
+
+
+class AlertsView(LoginRequiredMixin, View):
+    """Qo'ng'iroqcha yoki bosh sahifadagi "Eslatmalar" kartasi (sahifa ochilgandan keyin yuklanadi)."""
+
+    def get(self, request):
+        template = "accounts/_alerts_card.html" if request.GET.get("view") == "card" else "accounts/_bell.html"
+        return render(request, template, {"alerts": build_alerts(request.user)})

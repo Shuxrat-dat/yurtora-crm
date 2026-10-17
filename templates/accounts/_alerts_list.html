@@ -1,0 +1,7 @@
+<ul class="yt-alerts">
+    {% for a in alerts %}
+    <li><a href="{{ a.url }}"><i class="yt-dot yt-dot--{{ a.tone }}" aria-hidden="true"></i><span>{{ a.text }}</span></a></li>
+    {% empty %}
+    <li class="yt-empty">Hozircha eslatma yo'q.</li>
+    {% endfor %}
+</ul>

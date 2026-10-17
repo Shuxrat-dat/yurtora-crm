@@ -106,6 +106,10 @@ class StudentListView(RoleRequiredMixin, ListView):
                 enrollment_filter &= Q(enrollments__group__teacher__user=user)
             qs = qs.filter(enrollment_filter)
 
+        # Guruhsiz faol o'quvchilar (qo'ng'iroqchadagi eslatmadan): ochiq a'zoligi yo'q
+        if self.request.GET.get("nogroup") == "1":
+            qs = qs.filter(status=Student.Status.ACTIVE).exclude(enrollments__status__in=OPEN_ENROLLMENT_STATUSES)
+
         # Manba bo'yicha filtr
         source_filter = self.request.GET.get("source", "").strip()
         if source_filter in Student.Source.values:

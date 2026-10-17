@@ -245,3 +245,29 @@
     if (n.matches('input[data-money]')) format(n); else formatAll(n);
   }))).observe(document.body, { childList: true, subtree: true });
 })();
+
+// --- Umumiy qidiruv: Ctrl/⌘+K bilan ochiladi, strelkalar bilan yuriladi, Esc yopadi ---
+(() => {
+  const input = document.getElementById('yt-search-input');
+  const pop = document.getElementById('yt-search-results');
+  if (!input || !pop) return;
+  const kbd = document.querySelector('.yt-kbd');
+  if (kbd && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)) kbd.textContent = '⌘K';
+  const links = () => [...pop.querySelectorAll('a')];
+  const close = () => { pop.innerHTML = ''; };
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); input.focus(); input.select(); }
+  });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown' && links().length) { e.preventDefault(); links()[0].focus(); }
+    else if (e.key === 'Escape') { close(); input.blur(); }
+  });
+  pop.addEventListener('keydown', (e) => {
+    const list = links();
+    const i = list.indexOf(document.activeElement);
+    if (e.key === 'ArrowDown') { e.preventDefault(); (list[i + 1] || list[0]).focus(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); if (i <= 0) input.focus(); else list[i - 1].focus(); }
+    else if (e.key === 'Escape') { close(); input.focus(); }
+  });
+  document.addEventListener('click', (e) => { if (!e.target.closest('.yt-search')) close(); });
+})();

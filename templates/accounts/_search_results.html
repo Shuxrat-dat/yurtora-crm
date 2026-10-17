@@ -1,0 +1,35 @@
+{% load mv %}{% if result %}
+<div class="yt-sr">
+    {% if result.students %}
+    <div class="yt-sr-sec">O'quvchilar</div>
+    {% for s in result.students %}
+    <a class="yt-sr-item" href="{% url 'students:student_detail' s.pk %}">
+        <span class="yt-ava mv-tone-{{ s.pk|tone }}" aria-hidden="true">{{ s.last_name|first|upper }}{{ s.first_name|first|upper }}</span>
+        <span class="yt-sr-main"><b>{{ s.last_name }} {{ s.first_name }}</b><small>{{ s.groups_label|default:"Guruhsiz" }}</small></span>
+    </a>
+    {% endfor %}
+    <a class="yt-sr-all" href="{% url 'students:student_list' %}?q={{ result.q|urlencode }}">Barcha o'quvchilar natijasi →</a>
+    {% endif %}
+    {% if result.groups %}
+    <div class="yt-sr-sec">Guruhlar</div>
+    {% for g in result.groups %}
+    <a class="yt-sr-item" href="{% url 'groups:group_detail' g.pk %}">
+        <span class="yt-sr-ico mv-tone-{{ g.pk|tone }}" aria-hidden="true"><svg class="mv-ico" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></svg></span>
+        <span class="yt-sr-main"><b>{{ g.name }}</b><small>{{ g.course.name }} · {{ g.teacher.full_name }}</small></span>
+    </a>
+    {% endfor %}
+    {% endif %}
+    {% if result.teachers %}
+    <div class="yt-sr-sec">O'qituvchilar</div>
+    {% for t in result.teachers %}
+    <a class="yt-sr-item" href="{% url 'teachers:teacher_profile' t.pk %}">
+        <span class="yt-sr-ico" aria-hidden="true"><svg class="mv-ico" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 3-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16 11l2 2 4-4"/></svg></span>
+        <span class="yt-sr-main"><b>{{ t.full_name }}</b><small>{{ t.phone|default:"O'qituvchi" }}</small></span>
+    </a>
+    {% endfor %}
+    {% endif %}
+    {% if not result.students and not result.groups and not result.teachers %}
+    <p class="yt-sr-empty">«{{ result.q }}» bo'yicha hech narsa topilmadi.</p>
+    {% endif %}
+</div>
+{% endif %}

@@ -180,6 +180,11 @@
                 {% endfor %}
             </ul>
         </section>
+
+        <section class="yt-card" hx-get="{% url 'accounts:alerts' %}?view=card" hx-trigger="load" hx-swap="innerHTML">
+            <div class="yt-card-head"><h2>Eslatmalar</h2></div>
+            <p class="yt-empty">Yuklanmoqda…</p>
+        </section>
     </aside>
     {% endif %}
 </div>

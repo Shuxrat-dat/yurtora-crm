@@ -22,6 +22,8 @@ urlpatterns = [
         views.DashboardScheduleGridView.as_view(),
         name="dashboard_schedule_grid",
     ),
+    path("search/", views.GlobalSearchView.as_view(), name="global_search"),
+    path("alerts/", views.AlertsView.as_view(), name="alerts"),
     path(
         "dashboard/daily-stats/",
         views.DailyStatsView.as_view(),

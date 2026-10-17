@@ -82,9 +82,19 @@
             </button>
             <form class="yt-search" action="{% url 'students:student_list' %}" method="get" role="search">
                 <svg class="mv-ico" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-                <input type="search" name="q" placeholder="O'quvchi qidirish…" aria-label="O'quvchi qidirish" autocomplete="off">
+                <input type="search" name="q" id="yt-search-input" autocomplete="off"
+                       placeholder="{% if user.role == 'accountant' %}O'quvchi qidirish…{% elif user.role == 'teacher' %}O'quvchi yoki guruh qidirish…{% else %}O'quvchi, guruh, o'qituvchi qidirish…{% endif %}"
+                       aria-label="Qidirish" aria-controls="yt-search-results"
+                       hx-get="{% url 'accounts:global_search' %}" hx-trigger="input changed delay:250ms, focus"
+                       hx-target="#yt-search-results" hx-swap="innerHTML">
+                <kbd class="yt-kbd" aria-hidden="true">Ctrl K</kbd>
+                <div id="yt-search-results" class="yt-search-pop" aria-live="polite"></div>
             </form>
             <span class="yt-spacer"></span>
+            <!-- Eslatmalar: sahifa ochilgandan keyin alohida so'rov bilan yuklanadi -->
+            <details class="yt-dd yt-bell" hx-get="{% url 'accounts:alerts' %}" hx-trigger="load" hx-swap="outerHTML">
+                <summary class="yt-icon-btn" aria-label="Eslatmalar"><svg class="mv-ico" viewBox="0 0 24 24"><path d="M6 8a6 6 0 1112 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 003.4 0"/></svg></summary>
+            </details>
             {% if user.role == 'administrator' or user.role == 'director' or user.role == 'accountant' %}
             <button type="button" class="yt-icon-btn" data-pay-open title="To'lov qabul qilish" aria-label="To'lov qabul qilish"><svg class="mv-ico" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg></button>
             {% endif %}
