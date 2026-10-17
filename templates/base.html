@@ -51,12 +51,13 @@
             {% endif %}
 
             {% if user.role == 'director' or user.role == 'administrator' %}
-            <details class="yt-group"{% if 'courses:' in v or 'schedule:room' in v or 'accounts:staff' in v or v == 'core:audit_log' or v == 'billing:overview' %} open{% endif %}>
+            <details class="yt-group"{% if 'courses:' in v or 'schedule:room' in v or 'accounts:staff' in v or 'goals:' in v or v == 'core:audit_log' or v == 'billing:overview' %} open{% endif %}>
                 <summary class="yt-link"><svg class="mv-ico" viewBox="0 0 24 24"><path d="M4 21V4a1 1 0 011-1h10a1 1 0 011 1v17"/><path d="M16 8h3a1 1 0 011 1v12M2 21h20M8 7h4M8 11h4M8 15h4"/></svg><span>Markaz</span><i class="yt-chev" aria-hidden="true"></i></summary>
                 <div class="yt-sub">
                     <a href="{% url 'courses:course_list' %}" class="{% if 'courses:' in v %}is-active{% endif %}">Kurslar</a>
                     <a href="{% url 'schedule:room_list' %}" class="{% if 'schedule:room' in v %}is-active{% endif %}">Xonalar</a>
                     {% if user.role == 'director' %}
+                    <a href="{% url 'goals:goal_list' %}" class="{% if 'goals:' in v %}is-active{% endif %}">Maqsadlar</a>
                     <a href="{% url 'accounts:staff_list' %}" class="{% if 'accounts:staff' in v %}is-active{% endif %}">Foydalanuvchilar</a>
                     <a href="{% url 'core:audit_log' %}" class="{% if v == 'core:audit_log' %}is-active{% endif %}">Jurnal</a>
                     <a href="{% url 'billing:overview' %}" class="{% if v == 'billing:overview' %}is-active{% endif %}">Obuna</a>

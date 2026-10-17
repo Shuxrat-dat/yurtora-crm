@@ -21,6 +21,7 @@ TRACKED_MODELS = [
     "students.StudentGuardian",
     "teachers.Teacher",
     "courses.Course",
+    "core.Goal",
     "groups.Group",
     "groups.Enrollment",
     "schedule.Room",

@@ -12,6 +12,7 @@ urlpatterns = [
     path("groups/", include("apps.groups.urls", namespace="groups")),
     path("schedule/", include("apps.schedule.urls", namespace="schedule")),
     path("audit/", include("apps.core.urls", namespace="core")),
+    path("goals/", include("apps.core.goal_urls", namespace="goals")),
     path("notifications/", include("apps.notifications.urls", namespace="notifications")),
     path("finance/", include("apps.finance.urls", namespace="finance")),
     path("billing/", include("apps.tenants.billing_urls", namespace="billing")),

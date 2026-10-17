@@ -1,0 +1,2 @@
+{% load mv %}<div class="yt-goal-nums"><b>{% if g.money %}{{ g.current|som }}{% else %}{{ g.current }}{% endif %}</b><span>/ {% if g.money %}{{ g.target|som }} so'm{% else %}{{ g.target }}{% endif %}</span>{% if g.done %}<em>Bajarildi</em>{% else %}<em>{{ g.percent }}%</em>{% endif %}</div>
+<div class="mv-meter {% if g.done %}is-ok{% else %}is-warn{% endif %}" role="progressbar" aria-valuemin="0" aria-valuemax="{{ g.target }}" aria-valuenow="{{ g.current }}"><i style="--w: {{ g.percent }}%"></i></div>

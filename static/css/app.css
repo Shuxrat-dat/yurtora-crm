@@ -784,3 +784,17 @@ a.yt-kpi:hover { border-color: color-mix(in srgb, var(--tone) 45%, #fff); }
 .yt-dot { flex: none; width: .55rem; height: .55rem; border-radius: 50%; background: var(--mv-muted); }
 .yt-dot--red { background: var(--mv-red); } .yt-dot--violet { background: #7c3aed; } .yt-dot--gold { background: #d97706; } .yt-dot--teal { background: var(--mv-primary); }
 @media (max-width: 639px) { .yt-bell-list { position: fixed; top: 4.1rem; left: .75rem; right: .75rem; min-width: 0; } }
+
+/* ---------- Asosiy maqsad (bosh sahifa va "Maqsadlar") ---------- */
+.yt-goal { flex: none; width: min(19rem, 100%); padding: 1rem 1.1rem; background: #fff; border: 1px solid var(--mv-border); border-radius: 1rem; box-shadow: var(--mv-shadow); }
+.yt-hero.has-goal { flex-wrap: wrap; }
+.yt-goal-cap { font-size: .78rem; font-weight: 500; color: var(--mv-muted); }
+.yt-goal-title { margin: .2rem 0 .7rem; font-size: .98rem; font-weight: 700; line-height: 1.25; color: var(--mv-ink); }
+.yt-goal-title i { font-style: normal; }
+.yt-goal-nums { display: flex; align-items: baseline; gap: .35rem; margin-bottom: .45rem; font-variant-numeric: tabular-nums; }
+.yt-goal-nums b { font-size: 1.3rem; font-weight: 700; color: var(--mv-ink); }
+.yt-goal-nums span { font-size: .85rem; color: var(--mv-muted); }
+.yt-goal-nums em { margin-left: auto; font-style: normal; font-size: .82rem; font-weight: 600; color: var(--mv-primary-dark); }
+.yt-card .mv-meter.is-warn { --c: var(--mv-primary); }
+.yt-goal-link { display: inline-block; margin-top: .65rem; font-size: .8rem; font-weight: 600; color: var(--mv-primary-dark); }
+.yt-goal-link:hover { text-decoration: underline; }

@@ -39,3 +39,78 @@ class AuditLogListView(RoleRequiredMixin, TemplateView):
             querystring=query.urlencode(),
         )
         return ctx
+
+
+
+from django.contrib import messages  # noqa: E402
+from django.shortcuts import get_object_or_404, redirect  # noqa: E402
+from django.urls import reverse_lazy  # noqa: E402
+from django.views import View  # noqa: E402
+from django.views.generic import CreateView, ListView, UpdateView  # noqa: E402
+
+from apps.accounts.permissions import RoleRequiredMixin as _RoleRequired  # noqa: E402
+from apps.core.forms import GoalForm  # noqa: E402
+from apps.core.goals import goal_progress  # noqa: E402
+from apps.core.models import Goal  # noqa: E402
+
+
+class GoalListView(_RoleRequired, ListView):
+    """Maqsadlar ro'yxati (faqat direktor)."""
+
+    model = Goal
+    template_name = "core/goal_list.html"
+    allowed_roles = ()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["rows"] = [goal_progress(g) for g in context["object_list"]]
+        return context
+
+
+class GoalCreateView(_RoleRequired, CreateView):
+    model = Goal
+    form_class = GoalForm
+    template_name = "core/goal_form.html"
+    allowed_roles = ()
+    success_url = reverse_lazy("goals:goal_list")
+
+    def get_initial(self):
+        return {"is_main": not Goal.objects.filter(is_main=True).exists()}
+
+    def form_valid(self, form):
+        messages.success(self.request, "Maqsad qo'shildi.")
+        return super().form_valid(form)
+
+
+class GoalUpdateView(_RoleRequired, UpdateView):
+    model = Goal
+    form_class = GoalForm
+    template_name = "core/goal_form.html"
+    allowed_roles = ()
+    success_url = reverse_lazy("goals:goal_list")
+
+    def form_valid(self, form):
+        messages.success(self.request, "Maqsad yangilandi.")
+        return super().form_valid(form)
+
+
+class GoalMainView(_RoleRequired, View):
+    """Maqsadni bosh sahifada ko'rsatiladigan asosiy maqsad qilish."""
+
+    allowed_roles = ()
+
+    def post(self, request, pk):
+        goal = get_object_or_404(Goal, pk=pk)
+        goal.is_main = True
+        goal.save()
+        messages.success(request, "Asosiy maqsad o'zgartirildi.")
+        return redirect("goals:goal_list")
+
+
+class GoalDeleteView(_RoleRequired, View):
+    allowed_roles = ()
+
+    def post(self, request, pk):
+        get_object_or_404(Goal, pk=pk).delete()
+        messages.success(request, "Maqsad o'chirildi.")
+        return redirect("goals:goal_list")

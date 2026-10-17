@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% load mv %}
+
+{% block title %}Maqsadlar — Yurtora CRM{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-5">
+    <div class="flex items-center justify-between gap-3">
+        <div>
+            <h1>Maqsadlar</h1>
+            <p class="text-sm text-slate-500 mt-1">Asosiy maqsad bosh sahifada ko'rinadi, progress o'zi hisoblanadi.</p>
+        </div>
+        <a href="{% url 'goals:goal_create' %}" class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg">+ Yangi maqsad</a>
+    </div>
+
+    {% for row in rows %}
+    <section class="yt-card">
+        <div class="yt-card-head">
+            <h2>{{ row.goal.display_title }}{% if row.goal.is_main %} <span class="mv-pill mv-pill--ok">Asosiy</span>{% endif %}</h2>
+            <div class="flex items-center gap-2">
+                {% if not row.goal.is_main %}
+                <form method="post" action="{% url 'goals:goal_main' row.goal.pk %}">{% csrf_token %}<button type="submit" class="mv-btn">Asosiy qilish</button></form>
+                {% endif %}
+                <a href="{% url 'goals:goal_edit' row.goal.pk %}" class="mv-btn">Tahrirlash</a>
+                <form method="post" action="{% url 'goals:goal_delete' row.goal.pk %}" onsubmit="return confirm('Maqsad o\'chirilsinmi?')">{% csrf_token %}<button type="submit" class="mv-btn">O'chirish</button></form>
+            </div>
+        </div>
+        <p class="text-sm text-slate-500 mb-2">{{ row.goal.get_period_display }} · {{ row.goal.get_metric_display }}</p>
+        {% include "core/_goal_bar.html" with g=row %}
+    </section>
+    {% empty %}
+    <div class="mv-empty">
+        <p class="font-semibold">Hali maqsad qo'yilmagan.</p>
+        <p class="text-sm text-slate-500 mt-1">Masalan: «Bugun 5 ta yangi o'quvchi».</p>
+        <a href="{% url 'goals:goal_create' %}" class="inline-block mt-3 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg">Birinchi maqsadni qo'shish</a>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

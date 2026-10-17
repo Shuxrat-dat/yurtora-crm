@@ -17,6 +17,7 @@ from django.views.generic import TemplateView
 from apps.core.alerts import build_alerts
 from apps.core.daily_stats import get_daily_stats, resolve_period
 from apps.core.filters import parse_int
+from apps.core.goals import main_goal_for
 from apps.core.search import global_search
 from apps.core.services import (
     compute_room_occupancy,
@@ -127,6 +128,7 @@ class HomeView(LoginRequiredMixin, TemplateView):
             )
             context["recent_students"] = recent_students()
             context["trends"] = dashboard_trends(user)
+            context["main_goal"] = main_goal_for(user)
 
         # Weekday names for tabs
         context["weekday_names"] = [

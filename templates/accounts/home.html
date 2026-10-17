@@ -7,7 +7,7 @@
 <div class="yt-home{% if is_teacher %} is-teacher{% endif %}">
     <div class="yt-home-main">
         <!-- Salomlashish -->
-        <section class="yt-hero">
+        <section class="yt-hero{% if main_goal %} has-goal{% endif %}">
             <div>
                 <p class="yt-hero-date">{% now "l, j F" %}</p>
                 <h1 class="yt-hero-title">Xush kelibsiz, {{ user.first_name|default:user.username }}</h1>
@@ -25,7 +25,16 @@
                     </button>
                 </div>
             </div>
+            {% if main_goal %}
+            <aside class="yt-goal" aria-label="Asosiy maqsad">
+                <p class="yt-goal-cap">{{ main_goal.goal.get_period_display }}: asosiy maqsad</p>
+                <p class="yt-goal-title">{{ main_goal.goal.display_title }} <i aria-hidden="true">{% if main_goal.done %}🎉{% else %}🎯{% endif %}</i></p>
+                {% include "core/_goal_bar.html" with g=main_goal %}
+                {% if user.role == 'director' %}<a class="yt-goal-link" href="{% url 'goals:goal_list' %}">Maqsadlarni ko'rish →</a>{% endif %}
+            </aside>
+            {% else %}
             <div class="yt-hero-art">{% include "includes/hero_building.svg" %}</div>
+            {% endif %}
         </section>
 
         {% if is_teacher %}

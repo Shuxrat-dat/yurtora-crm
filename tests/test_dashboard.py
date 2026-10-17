@@ -449,9 +449,10 @@ class TestDashboardQueryOptimization:
         # Admin: 18 queries (session, user, operational metrics, occupancy, schedule grid,
         # room timeline seat counts, recent students + their open groups) + 5 for month-over-month
         # trends (enrollments, status history, groups, new/left counts, lessons).
+        # + 1 for the main goal widget (goal row; its progress is a second query only when a goal exists).
         # Finance metrics and their trends (debtors, monthly income) are skipped for administrator.
         # This is optimized - no N+1 problems
-        with django_assert_num_queries(num=23 + TENANCY_QUERIES_PER_REQUEST, using="default"):
+        with django_assert_num_queries(num=24 + TENANCY_QUERIES_PER_REQUEST, using="default"):
             response = client.get(reverse("accounts:home"))
             assert response.status_code == 200
 
