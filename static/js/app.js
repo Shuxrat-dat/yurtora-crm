@@ -271,3 +271,14 @@
   });
   document.addEventListener('click', (e) => { if (!e.target.closest('.yt-search')) close(); });
 })();
+
+// --- Tungi rejim: tanlov brauzerda eslab qolinadi (boshlang'ich holat <head> dagi skriptda o'rnatiladi) ---
+(() => {
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('[data-mode-toggle]')) return;
+    const root = document.documentElement;
+    const dark = root.getAttribute('data-mode') !== 'dark';
+    if (dark) root.setAttribute('data-mode', 'dark'); else root.removeAttribute('data-mode');
+    try { localStorage.setItem('yt-mode', dark ? 'dark' : 'light'); } catch (err) {}
+  });
+})();

@@ -60,3 +60,11 @@ def test_teacher_home_has_no_quick_actions_or_money(client, teacher_user, day):
     html = client.get(reverse("accounts:home")).content.decode()
     assert "Tezkor amallar" not in html and "So'nggi o'quvchilar" not in html
     assert "Qarzdorlar" not in html and "Yangi qabul" not in html
+
+
+def test_dark_mode_toggle_and_early_script_present(client, director_user):
+    client.force_login(director_user)
+    html = client.get(reverse("accounts:home")).content.decode()
+    assert "data-mode-toggle" in html
+    # Boshlang'ich rejim sahifa chizilishidan oldin o'rnatiladi (miltillamaslik uchun): CSS dan oldin
+    assert html.index("yt-mode") < html.index("css/app.css")
