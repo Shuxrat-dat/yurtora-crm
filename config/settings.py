@@ -65,7 +65,7 @@ TENANT_LIMIT_SET_CALLS = True
 # Yurtora asosiy domeni: markazlar <nom>.ROOT_DOMAIN manzilida (lokalda: ilm.localhost:8000)
 ROOT_DOMAIN = env.str("ROOT_DOMAIN", default="localhost")
 # Yurtora bilan bog'lanish (obuna/to'lov): bloklangan sahifada va "Obuna" sahifasida ko'rsatiladi
-YURTORA_SUPPORT = env.str("YURTORA_SUPPORT", default="")
+YURTORA_SUPPORT = env.str("YURTORA_SUPPORT", default="+998 95 000 57 86, Telegram: @shukhrat_dev")
 
 MIDDLEWARE = [
     "apps.tenants.middleware.CenterMiddleware",  # birinchi: manzil bo'yicha markaz sxemasini tanlaydi

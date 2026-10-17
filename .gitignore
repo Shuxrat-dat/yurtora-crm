@@ -50,3 +50,5 @@ tools/tailwindcss.exe
 tools/tailwindcss
 backups-offsite/
 .cache/
+# lokal demo kirish ma'lumotlari (hech qachon commit qilinmaydi)
+.dev-login.txt
