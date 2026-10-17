@@ -7,4 +7,5 @@ app_name = "public"
 urlpatterns = [
     path("", views.LandingView.as_view(), name="landing"),
     path("signup/", views.SignupView.as_view(), name="signup"),
+    path("demo/rahmat/", views.DemoThanksView.as_view(), name="demo_thanks"),
 ]

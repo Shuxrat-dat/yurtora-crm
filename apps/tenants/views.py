@@ -9,7 +9,7 @@ from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.views.generic import FormView, TemplateView
 
-from .forms import CenterSignupForm
+from .forms import CenterSignupForm, DemoRequestForm
 from .models import Domain
 from .services import create_center, public_hosts
 
@@ -23,8 +23,77 @@ def client_ip(request) -> str:
     return forwarded.split(",")[0].strip() if forwarded else request.META.get("REMOTE_ADDR", "")
 
 
-class LandingView(TemplateView):
+DEMOS_PER_IP_PER_HOUR = 3
+
+
+class LandingView(FormView):
+    """Reklama lendingi: imkoniyatlar, narxlar va "Demo buyurtma" formasi (shu sahifaning o'zida)."""
+
     template_name = "public/landing.html"
+    form_class = DemoRequestForm
+
+    def get_initial(self):
+        return {"plan": self.request.GET.get("plan", "")}
+
+    def get_context_data(self, **kwargs):
+        from django.conf import settings
+
+        from .models import Plan
+
+        context = super().get_context_data(**kwargs)
+        context["plans"] = list(Plan.objects.filter(is_active=True))
+        context["support"] = settings.YURTORA_SUPPORT
+        return context
+
+    def form_valid(self, form):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        from .models import DemoRequest
+        from .notify import notify_owner
+
+        data = form.cleaned_data
+        if data["website"]:  # spam tuzog'i to'ldirilgan: botga muvaffaqiyat ko'rsatamiz, saqlamaymiz
+            return redirect("public:demo_thanks")
+        ip = client_ip(self.request) or None
+        now = timezone.now()
+        if ip and DemoRequest.objects.filter(ip_address=ip, created_at__gte=now - timedelta(hours=1)).count() >= DEMOS_PER_IP_PER_HOUR:
+            form.add_error(None, "Juda ko'p buyurtma yuborildi. Birozdan keyin urinib ko'ring yoki bizga qo'ng'iroq qiling.")
+            return self.form_invalid(form)
+        digits = "".join(ch for ch in data["phone"] if ch.isdigit())[-9:]
+        recent = DemoRequest.objects.filter(created_at__gte=now - timedelta(hours=24)).values_list("phone", flat=True)
+        if any("".join(c for c in p if c.isdigit())[-9:] == digits for p in recent):
+            return redirect("public:demo_thanks")  # bir xil telefondan takror: bitta buyurtma yetarli
+        demo = DemoRequest.objects.create(
+            name=data["name"].strip(),
+            center_name=data["center_name"].strip(),
+            phone=data["phone"],
+            students=data["students"],
+            plan=data["plan"],
+            message=data["message"].strip(),
+            ip_address=ip,
+        )
+        logger.info("Yangi demo buyurtma: %s", demo.center_name)
+        notify_owner(
+            "Yangi demo buyurtma\n"
+            f"Markaz: {demo.center_name}\nIsm: {demo.name}\nTelefon: {demo.phone}\n"
+            f"O'quvchilar: {demo.get_students_display()}\n"
+            + (f"Tarif: {demo.plan}\n" if demo.plan else "")
+            + (f"Izoh: {demo.message}" if demo.message else "")
+        )
+        return redirect("public:demo_thanks")
+
+
+class DemoThanksView(TemplateView):
+    template_name = "public/demo_thanks.html"
+
+    def get_context_data(self, **kwargs):
+        from django.conf import settings
+
+        context = super().get_context_data(**kwargs)
+        context["support"] = settings.YURTORA_SUPPORT
+        return context
 
 
 class SignupView(FormView):

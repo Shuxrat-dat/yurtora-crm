@@ -65,6 +65,8 @@ TENANT_LIMIT_SET_CALLS = True
 # Yurtora asosiy domeni: markazlar <nom>.ROOT_DOMAIN manzilida (lokalda: ilm.localhost:8000)
 ROOT_DOMAIN = env.str("ROOT_DOMAIN", default="localhost")
 # Yurtora bilan bog'lanish (obuna/to'lov): bloklangan sahifada va "Obuna" sahifasida ko'rsatiladi
+# Yangi demo buyurtmalari haqida xabar olish uchun egasining Telegram chat ID si (bot tokeni ham kerak)
+YURTORA_OWNER_TELEGRAM_CHAT_ID = env.str("YURTORA_OWNER_TELEGRAM_CHAT_ID", default="")
 YURTORA_SUPPORT = env.str("YURTORA_SUPPORT", default="+998 95 000 57 86, Telegram: @shukhrat_dev")
 
 MIDDLEWARE = [

@@ -1,0 +1,13 @@
+{% extends "public/base_public.html" %}
+{% load static %}
+{% block title %}Buyurtma qabul qilindi — Yurtora CRM{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'css/landing.css' %}?v={{ ASSET_VERSION }}">{% endblock %}
+{% block content %}
+<section class="lan-thanks pub-card">
+    <div class="tick" aria-hidden="true">✓</div>
+    <h1>Rahmat! Buyurtmangiz qabul qilindi</h1>
+    <p>Tez orada siz bilan bog'lanib, 7 kunlik demo kirishni ochib beramiz.</p>
+    {% if support %}<p>Shoshilinch bo'lsa: <strong>{{ support }}</strong></p>{% endif %}
+    <p style="margin-top:1.4rem"><a href="{% url 'public:landing' %}" class="pub-btn pub-btn--ghost">Bosh sahifaga qaytish</a></p>
+</section>
+{% endblock %}

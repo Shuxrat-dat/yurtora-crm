@@ -123,3 +123,39 @@ class Suggestion(models.Model):
 
     def __str__(self):
         return f"{self.center.name}: {self.text[:40]}"
+
+
+class DemoRequest(models.Model):
+    """Lendingdan kelgan demo buyurtmasi (public sxemada). Egasi telefon orqali bog'lanib, 7 kunlik demo beradi."""
+
+    class Status(models.TextChoices):
+        NEW = "new", "Yangi"
+        CONTACTED = "contacted", "Bog'lanildi"
+        DEMO = "demo", "Demo berildi"
+        WON = "won", "Mijoz bo'ldi"
+        LOST = "lost", "Rad etildi"
+
+    class Size(models.TextChoices):
+        UNKNOWN = "", "Ko'rsatilmagan"
+        S = "lt100", "100 tagacha"
+        M = "100-300", "100–300"
+        L = "gt300", "300 dan ko'p"
+
+    name = models.CharField(max_length=120, verbose_name="Ismi")
+    center_name = models.CharField(max_length=120, verbose_name="Markaz nomi")
+    phone = models.CharField(max_length=30, verbose_name="Telefon")
+    students = models.CharField(max_length=10, blank=True, choices=Size.choices, default="", verbose_name="O'quvchilar soni")
+    plan = models.CharField(max_length=30, blank=True, verbose_name="Qiziqqan tarif")
+    message = models.TextField(max_length=1000, blank=True, verbose_name="Izoh")
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.NEW, db_index=True, verbose_name="Holati")
+    note = models.TextField(blank=True, verbose_name="Mening yozuvim")
+    ip_address = models.GenericIPAddressField(null=True, blank=True, verbose_name="IP")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Yuborilgan vaqti")
+
+    class Meta:
+        verbose_name = "Demo buyurtma"
+        verbose_name_plural = "Demo buyurtmalar"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.center_name} ({self.phone})"

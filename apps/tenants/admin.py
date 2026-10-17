@@ -2,7 +2,7 @@ from django import forms
 from django.contrib import admin, messages
 
 from . import billing
-from .models import Center, Domain, Plan, SubscriptionPayment, Suggestion
+from .models import Center, DemoRequest, Domain, Plan, SubscriptionPayment, Suggestion
 
 
 class DomainInline(admin.TabularInline):
@@ -105,3 +105,17 @@ class SuggestionAdmin(admin.ModelAdmin):
 
     def has_add_permission(self, request):
         return False  # takliflar faqat markazlardan keladi
+
+
+@admin.register(DemoRequest)
+class DemoRequestAdmin(admin.ModelAdmin):
+    list_display = ("created_at", "center_name", "name", "phone", "students", "plan", "status")
+    list_filter = ("status", "students", "plan")
+    list_editable = ("status",)
+    search_fields = ("center_name", "name", "phone", "message", "note")
+    readonly_fields = ("name", "center_name", "phone", "students", "plan", "message", "ip_address", "created_at")
+    fields = ("status", "note", "name", "center_name", "phone", "students", "plan", "message", "ip_address", "created_at")
+    date_hierarchy = "created_at"
+
+    def has_add_permission(self, request):
+        return False  # buyurtmalar faqat lendingdan keladi

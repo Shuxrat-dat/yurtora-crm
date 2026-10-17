@@ -1,18 +1,129 @@
 {% extends "public/base_public.html" %}
-{% block title %}Yurtora CRM: o'quv markazlari uchun tizim{% endblock %}
+{% load static mv %}
+{% block title %}Yurtora CRM — o'quv markazlari uchun boshqaruv tizimi{% endblock %}
+{% block meta %}
+<meta name="description" content="O'quvchilar, guruhlar, dars jadvali, davomat, to'lov va chek, qarzdorlarga Telegram eslatma, kassa va ish haqi. O'zbek tilida. 7 kunlik bepul demo.">
+<meta property="og:title" content="Yurtora CRM — o'quv markazlari uchun tizim">
+<meta property="og:description" content="O'quv markazingiz boshqaruvi bitta tizimda. 7 kunlik bepul demo buyurtma qiling.">
+{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'css/landing.css' %}?v={{ ASSET_VERSION }}">{% endblock %}
+{% block top_nav %}<nav class="pub-nav" aria-label="Bo'limlar"><a href="#imkoniyatlar">Imkoniyatlar</a><a href="#narxlar">Narxlar</a><a href="#savollar">Savollar</a></nav>{% endblock %}
+
 {% block content %}
-<section style="display:grid;gap:1.25rem;max-width:46rem;padding:1.5rem 0 3rem">
-    <span class="pub-badge">O'quv markazlari uchun</span>
-    <h1 style="margin:0;font-weight:700;font-size:clamp(2.2rem,5.5vw,3.6rem);line-height:1.05;letter-spacing:-.01em">O'quv markazingiz boshqaruvi <span style="color:#0f8f82">bitta tizimda</span></h1>
-    <p style="margin:0;font-size:1.2rem;line-height:1.55;color:#4a5762">O'quvchilar, guruhlar, dars jadvali, davomat, to'lov va chek, qarzdorlarga Telegram eslatma, kassa va ish haqi. To'liq o'zbek tilida.</p>
-    <div style="display:flex;flex-wrap:wrap;gap:.75rem">
-        <a href="{% url 'public:signup' %}" class="pub-btn pub-btn--main">Markazni ulash</a>
+<section class="lan-hero">
+    <div>
+        <span class="pub-badge">O'quv markazlari uchun CRM</span>
+        <h1>O'quv markazingiz boshqaruvi <em>bitta tizimda</em></h1>
+        <p>O'quvchilar, guruhlar, dars jadvali, davomat, to'lov va chek, qarzdorlarga Telegram eslatma, kassa va ish haqi. To'liq o'zbek tilida.</p>
+        <div class="lan-cta">
+            <a href="#demo" class="pub-btn pub-btn--main pub-btn--lg">7 kunlik demo buyurtma qilish</a>
+            <a href="#imkoniyatlar" class="pub-btn pub-btn--ghost pub-btn--lg">Imkoniyatlarni ko'rish</a>
+        </div>
+        <ul class="lan-ticks"><li>Demo bepul</li><li>O'rnatish shart emas</li><li>Ma'lumotlarni ko'chirishda yordam</li></ul>
+    </div>
+    <div class="lan-mock" aria-hidden="true">
+        <div class="lan-mock-bar"><i></i><i></i><i></i></div>
+        <div class="lan-mock-hello"><small>Bugun, dushanba</small><b>Xush kelibsiz, direktor</b></div>
+        <div class="lan-mock-kpis">
+            <div class="lan-mock-kpi"><span>Faol o'quvchilar</span><b>148</b><em>↑ +12</em></div>
+            <div class="lan-mock-kpi is-red"><span>Qarzdorlar</span><b>18</b><em>↓ −3</em></div>
+            <div class="lan-mock-kpi"><span>Oylik tushum</span><b>28,7 mln</b><em>↑ +18%</em></div>
+        </div>
+        <div class="lan-mock-tl"><i class="a">09:00 Ingliz tili</i><i class="b">11:00 Rus tili</i><i class="c">14:30 Matematika</i></div>
     </div>
 </section>
-<section style="display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(14rem,1fr))">
-    <div class="pub-card"><div class="pub-ico"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 3-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16 4.5a3.5 3.5 0 010 7M18 14.5c2 .6 3.5 2.4 3.5 5.5"/></svg></div><h2 style="margin:0 0 .4rem;font-size:1.15rem">O'quvchilar va guruhlar</h2><p style="margin:0;color:#4a5762">Karta, guruh, balans va davomat bitta joyda.</p></div>
-    <div class="pub-card"><div class="pub-ico"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg></div><h2 style="margin:0 0 .4rem;font-size:1.15rem">To'lov va chek</h2><p style="margin:0;color:#4a5762">To'lovni qabul qiling, chekni termoprinterga chiqaring.</p></div>
-    <div class="pub-card"><div class="pub-ico"><svg viewBox="0 0 24 24"><path d="M12 3l9.5 17h-19L12 3z"/><path d="M12 10v4M12 17.5v.01"/></svg></div><h2 style="margin:0 0 .4rem;font-size:1.15rem">Qarzdorlar</h2><p style="margin:0;color:#4a5762">Ota-onalarga eslatma Telegram orqali boradi.</p></div>
-    <div class="pub-card"><div class="pub-ico"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></div><h2 style="margin:0 0 .4rem;font-size:1.15rem">Kassa va ish haqi</h2><p style="margin:0;color:#4a5762">Kunlik kassa, oylik hisobot, o'qituvchi foizlari.</p></div>
+
+<div class="lan-strip">
+    <div><b>100%</b><span>o'zbek tilida</span></div>
+    <div><b>Telegram</b><span>qarz eslatmalari</span></div>
+    <div><b>Chek</b><span>termoprinterga</span></div>
+    <div><b>7 kun</b><span>bepul demo</span></div>
+</div>
+
+<section class="lan-sec" id="imkoniyatlar">
+    <h2>Markazingiz uchun kerak hamma narsa</h2>
+    <p class="lan-lead">Qog'oz daftar va Excel jadvallarni almashtiring. Hamma ish bir joyda, har bir xodim faqat o'ziga kerakni ko'radi.</p>
+    <div class="lan-grid">
+        <article class="lan-card"><span class="pub-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 3-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16 4.5a3.5 3.5 0 010 7M18 14.5c2 .6 3.5 2.4 3.5 5.5"/></svg></span><h3>O'quvchilar va guruhlar</h3><p>Har bir o'quvchi kartasi: guruhlari, balansi, davomati va aloqa ma'lumotlari bir joyda.</p></article>
+        <article class="lan-card"><span class="pub-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></span><h3>Dars jadvali va xonalar</h3><p>Xonalar bandligi lentada ko'rinadi, vaqt to'qnashuvi avtomatik tekshiriladi.</p></article>
+        <article class="lan-card"><span class="pub-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M9 15l2 2 4-4"/></svg></span><h3>Davomat</h3><p>Dars paytida bir bosish bilan belgilanadi. Sababli kelmaganlar uchun to'lov hisobi to'g'rilanadi.</p></article>
+        <article class="lan-card"><span class="pub-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg></span><h3>To'lov va chek</h3><p>To'lovni qabul qiling va chekni termoprinterga chiqaring. Chekda markazingiz logotipi.</p></article>
+        <article class="lan-card"><span class="pub-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 3L11 14"/><path d="M22 3l-7 19-4-8-8-4 19-7z"/></svg></span><h3>Qarzdorlarga Telegram eslatma</h3><p>Ota-onalarga qarz haqida eslatma Telegram orqali boradi. Siz avval ro'yxatni ko'rib tasdiqlaysiz.</p></article>
+        <article class="lan-card"><span class="pub-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 012-2h13v4"/><path d="M3 7v11a2 2 0 002 2h15V9H5a2 2 0 01-2-2z"/><circle cx="16.5" cy="14.5" r="1"/></svg></span><h3>Kassa va ish haqi</h3><p>Kunlik kassa, xarajatlar, o'qituvchilarga foiz yoki qat'iy oylik, oyni yopish.</p></article>
+        <article class="lan-card"><span class="pub-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span><h3>Hisobotlar va ko'rsatkichlar</h3><p>Tushum, qarz, yangi qabul, ketganlar: o'tgan oyga nisbatan o'zgarish bilan.</p></article>
+        <article class="lan-card"><span class="pub-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg></span><h3>Rollar va xavfsizlik</h3><p>Direktor, administrator, o'qituvchi, buxgalter: har kim faqat o'ziga kerakni ko'radi. Ma'lumotlar markazlar orasida to'liq ajratilgan.</p></article>
+        <article class="lan-card"><span class="pub-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg></span><h3>Telefonda ham, kompyuterda ham</h3><p>Brauzerda ishlaydi: o'rnatish shart emas. Qulay tungi rejim va o'zbek tilida interfeys.</p></article>
+    </div>
+</section>
+
+<section class="lan-sec" id="qanday">
+    <h2>Qanday boshlanadi</h2>
+    <p class="lan-lead">Murakkab o'rnatish yo'q. Buyurtma qoldiring, qolganini biz qilamiz.</p>
+    <div class="lan-steps">
+        <div class="lan-step"><h3>Buyurtma qoldiring</h3><p>Pastdagi shaklda ismingiz, markaz nomi va telefoningizni yozing.</p></div>
+        <div class="lan-step"><h3>Biz siz bilan bog'lanamiz</h3><p>Sizga qo'ng'iroq qilib, ehtiyojingizni aniqlaymiz va 7 kunlik demo ochamiz.</p></div>
+        <div class="lan-step"><h3>Sinab ko'ring va ishga tushiring</h3><p>Demo davomida tizimni o'zingiz sinaysiz. Yoqsa, ma'lumotlaringizni ko'chirishda yordam beramiz.</p></div>
+    </div>
+</section>
+
+{% if plans %}
+<section class="lan-sec" id="narxlar">
+    <h2>Oddiy va ochiq narxlar</h2>
+    <p class="lan-lead">Oylik to'lov. Tarifni markaz hajmiga qarab tanlang, keyin istalgan vaqtda o'zgartirish mumkin.</p>
+    <div class="lan-prices">
+        {% for p in plans %}
+        <article class="lan-price{% if p.code == 'standart' %} is-hot{% endif %}">
+            {% if p.code == 'standart' %}<span class="pub-badge">Ommabop</span>{% endif %}
+            <h3>{{ p.name }}</h3>
+            <div class="amt">{{ p.price_month|som }} <small>so'm / oy</small></div>
+            <ul>
+                <li>O'quvchilar: {% if p.max_students %}{{ p.max_students }} tagacha{% else %}cheklovsiz{% endif %}</li>
+                <li>Foydalanuvchilar: cheklovsiz</li>
+                <li>Barcha imkoniyatlar</li>
+                <li>7 kunlik bepul demo</li>
+            </ul>
+            <a href="?plan={{ p.code|urlencode }}#demo" class="pub-btn {% if p.code == 'standart' %}pub-btn--main{% else %}pub-btn--ghost{% endif %}">Demo buyurtma</a>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<section class="lan-sec" id="savollar">
+    <h2>Ko'p so'raladigan savollar</h2>
+    <div class="lan-faq">
+        <details><summary>Demo nima beradi?</summary><p>7 kun davomida tizimning to'liq imkoniyatlaridan foydalanasiz: o'quvchi va guruh qo'shish, jadval, davomat, to'lov, hisobotlar. Demo uchun to'lov olinmaydi.</p></details>
+        <details><summary>Ma'lumotlarim xavfsizmi?</summary><p>Har bir markazning ma'lumotlari alohida saqlanadi va boshqa markazlarga ko'rinmaydi. Xodimlar rollar bo'yicha cheklangan: o'qituvchi faqat o'z guruhlarini ko'radi, moliyani esa faqat direktor.</p></details>
+        <details><summary>Eski ma'lumotlarimni ko'chirib berasizmi?</summary><p>Ha. O'quvchilar ro'yxatini Excel fayldan yuklash mumkin, kerak bo'lsa ko'chirishda yordam beramiz.</p></details>
+        <details><summary>Telefon yoki kompyuterda ishlaydimi?</summary><p>Ha, tizim brauzerda ishlaydi: o'rnatish shart emas. Telefon, planshet va kompyuterda qulay ko'rinadi.</p></details>
+        <details><summary>To'lov qanday amalga oshiriladi?</summary><p>Demo tugagach, oylik tarifni siz bilan kelishib, to'lovni qabul qilamiz. Birinchi qo'ng'iroqda hammasini tushuntirib beramiz.</p></details>
+    </div>
+</section>
+
+<section class="lan-sec" id="demo">
+    <div class="lan-demo">
+        <div>
+            <h2>7 kunlik bepul demo buyurtma qiling</h2>
+            <p>Shaklni to'ldiring: sizga qo'ng'iroq qilib, demo kirishni ochib beramiz.</p>
+            <ul><li>Demo 7 kun, to'lovsiz</li><li>Bir ish kuni ichida bog'lanamiz</li><li>Majburiyat yo'q</li></ul>
+            {% if support %}<p class="lan-contact">Savollar bo'lsa: <strong>{{ support }}</strong></p>{% endif %}
+        </div>
+        <form method="post" action="{% url 'public:landing' %}#demo" novalidate data-once>
+            {% csrf_token %}
+            {% if form.non_field_errors %}<div class="lan-form-error" role="alert">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+            {% for field in form.visible_fields %}{% if field.name != 'website' %}
+            <div class="pub-field">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% for e in field.errors %}<span class="pub-error">{{ e }}</span>{% endfor %}
+            </div>
+            {% endif %}{% endfor %}
+            {{ form.plan }}
+            <div class="lan-hp" aria-hidden="true"><label>Veb-sayt <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
+            <button type="submit" class="pub-btn pub-btn--main pub-btn--lg">Demo buyurtma berish</button>
+            <p class="pub-help" style="margin:0">Yuborish orqali siz bilan bog'lanishimizga rozilik berasiz.</p>
+        </form>
+    </div>
 </section>
 {% endblock %}
+{% block footer %}Yurtora CRM, {% now "Y" %}{% if support %} · {{ support }}{% endif %} · <a href="{% url 'public:signup' %}" style="color:inherit">Markazni ulash</a>{% endblock %}
