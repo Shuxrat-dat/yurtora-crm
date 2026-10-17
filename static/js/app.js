@@ -212,3 +212,10 @@
     if (dsModal.dataset.autoOpen === '1') openDs();
   }
 })();
+
+// --- Yuqori menyu: tashqariga bosilganda yoki Esc bosilganda ochiq ro'yxatlar yopiladi ---
+(() => {
+  const closeAll = (except) => document.querySelectorAll('.yt-dd[open]').forEach((d) => { if (d !== except) d.removeAttribute('open'); });
+  document.addEventListener('click', (e) => closeAll(e.target.closest('.yt-dd')));
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAll(null); });
+})();

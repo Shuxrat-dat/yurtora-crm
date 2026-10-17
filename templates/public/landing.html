@@ -1,17 +1,18 @@
 {% extends "public/base_public.html" %}
 {% block title %}Yurtora CRM: o'quv markazlari uchun tizim{% endblock %}
 {% block content %}
-<section style="display:grid;gap:1.25rem;max-width:44rem;padding:2rem 0 2.5rem">
-    <h1 style="margin:0;font:italic 800 clamp(2.4rem,6vw,4rem)/1 'Barlow Condensed',sans-serif;text-transform:uppercase">O'quv markazingiz bitta tizimda</h1>
-    <p style="margin:0;font-size:1.2rem;line-height:1.5;color:#3a3f58">O'quvchilar, guruhlar, dars jadvali, davomat, to'lov va chek, qarzdorlarga Telegram eslatma, kassa va ish haqi. To'liq o'zbek tilida.</p>
+<section style="display:grid;gap:1.25rem;max-width:46rem;padding:1.5rem 0 3rem">
+    <span class="pub-badge">O'quv markazlari uchun</span>
+    <h1 style="margin:0;font-weight:700;font-size:clamp(2.2rem,5.5vw,3.6rem);line-height:1.05;letter-spacing:-.01em">O'quv markazingiz boshqaruvi <span style="color:#0f8f82">bitta tizimda</span></h1>
+    <p style="margin:0;font-size:1.2rem;line-height:1.55;color:#4a5762">O'quvchilar, guruhlar, dars jadvali, davomat, to'lov va chek, qarzdorlarga Telegram eslatma, kassa va ish haqi. To'liq o'zbek tilida.</p>
     <div style="display:flex;flex-wrap:wrap;gap:.75rem">
         <a href="{% url 'public:signup' %}" class="pub-btn pub-btn--main">Markazni ulash</a>
     </div>
 </section>
 <section style="display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(14rem,1fr))">
-    <div class="pub-card"><h2 style="margin:0 0 .4rem;font-size:1.15rem">O'quvchilar va guruhlar</h2><p style="margin:0;color:#3a3f58">Karta, guruh, balans va davomat bitta joyda.</p></div>
-    <div class="pub-card"><h2 style="margin:0 0 .4rem;font-size:1.15rem">To'lov va chek</h2><p style="margin:0;color:#3a3f58">To'lovni qabul qiling, chekni termoprinterga chiqaring.</p></div>
-    <div class="pub-card"><h2 style="margin:0 0 .4rem;font-size:1.15rem">Qarzdorlar</h2><p style="margin:0;color:#3a3f58">Ota-onalarga eslatma Telegram orqali boradi.</p></div>
-    <div class="pub-card"><h2 style="margin:0 0 .4rem;font-size:1.15rem">Kassa va ish haqi</h2><p style="margin:0;color:#3a3f58">Kunlik kassa, oylik hisobot, o'qituvchi foizlari.</p></div>
+    <div class="pub-card"><div class="pub-ico"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 3-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16 4.5a3.5 3.5 0 010 7M18 14.5c2 .6 3.5 2.4 3.5 5.5"/></svg></div><h2 style="margin:0 0 .4rem;font-size:1.15rem">O'quvchilar va guruhlar</h2><p style="margin:0;color:#4a5762">Karta, guruh, balans va davomat bitta joyda.</p></div>
+    <div class="pub-card"><div class="pub-ico"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg></div><h2 style="margin:0 0 .4rem;font-size:1.15rem">To'lov va chek</h2><p style="margin:0;color:#4a5762">To'lovni qabul qiling, chekni termoprinterga chiqaring.</p></div>
+    <div class="pub-card"><div class="pub-ico"><svg viewBox="0 0 24 24"><path d="M12 3l9.5 17h-19L12 3z"/><path d="M12 10v4M12 17.5v.01"/></svg></div><h2 style="margin:0 0 .4rem;font-size:1.15rem">Qarzdorlar</h2><p style="margin:0;color:#4a5762">Ota-onalarga eslatma Telegram orqali boradi.</p></div>
+    <div class="pub-card"><div class="pub-ico"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></div><h2 style="margin:0 0 .4rem;font-size:1.15rem">Kassa va ish haqi</h2><p style="margin:0;color:#4a5762">Kunlik kassa, oylik hisobot, o'qituvchi foizlari.</p></div>
 </section>
 {% endblock %}

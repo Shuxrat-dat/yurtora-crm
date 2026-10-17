@@ -4,19 +4,11 @@
 
 {% block content %}
 <div class="mv-login">
-    <section class="mv-login-cover" aria-label="{{ CENTER_NAME }}">
-        <div class="mv-login-mark">
+    <div class="mv-login-card">
+        <div class="mv-login-brand">
             <span class="mv-brand-mark" aria-hidden="true">{{ CENTER_INITIAL }}</span>
             {{ CENTER_NAME }}
         </div>
-        <div>
-            <p class="mv-login-title"><span>Yurtora</span><span>CRM</span></p>
-            <p class="mv-login-lead">O'quvchilar, guruhlar, dars jadvali va to'lovlar bitta joyda.</p>
-        </div>
-        <p class="mv-login-foot">O'quv markazi boshqaruv tizimi</p>
-    </section>
-
-    <section class="mv-login-panel">
         <div class="mv-login-form mv-page">
             <h1>Tizimga kirish</h1>
             <p class="mv-login-hint">Login va parolingizni kiriting.</p>
@@ -53,6 +45,7 @@
                 </button>
             </form>
         </div>
-    </section>
+        <p class="mv-login-foot">Yurtora CRM</p>
+    </div>
 </div>
 {% endblock %}
