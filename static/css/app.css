@@ -861,3 +861,12 @@ html[data-mode="dark"] .yt-mode-ico--moon { display: block; }
 :where(html[data-mode="dark"]) *, :where(html[data-mode="dark"]) ::before, :where(html[data-mode="dark"]) ::after { border-color: var(--mv-border); }
 html[data-mode="dark"] :is(.divide-slate-100, .divide-slate-200, .divide-y) > :not([hidden]) ~ :not([hidden]) { border-color: var(--mv-border); }
 html[data-mode="dark"] .mv-grp { color: var(--mv-ink); }
+
+/* Yon menyudagi "Taklif yuborish" kartasi */
+.yt-promo { display: grid; gap: .35rem; margin: 0 .75rem .9rem; padding: .9rem; background: var(--mv-primary-50); border: 1px solid var(--mv-border); border-radius: 1rem; }
+.yt-promo-ico { display: grid; place-items: center; width: 2.2rem; height: 2.2rem; border-radius: .7rem; color: var(--mv-primary-text); background: var(--mv-card); }
+.yt-promo b { font-size: .9rem; color: var(--mv-ink); }
+.yt-promo p { font-size: .78rem; line-height: 1.35; color: var(--mv-muted); }
+.yt-promo-btn { margin-top: .25rem; padding: .5rem .7rem; border-radius: .7rem; text-align: center; font-size: .82rem; font-weight: 600; color: var(--mv-ink); background: var(--mv-card); border: 1px solid var(--mv-border); }
+.yt-promo-btn:hover { border-color: var(--mv-primary); }
+@media (max-height: 720px) { .yt-promo p { display: none; } }

@@ -98,3 +98,28 @@ class SubscriptionPayment(models.Model):
 
     def __str__(self):
         return f"{self.center.name}: {self.months} oy, {self.period_end} gacha"
+
+
+class Suggestion(models.Model):
+    """Markazdan Yurtora egasiga yuborilgan taklif. Doim "public" sxemada saqlanadi (egasi admin panelda ko'radi)."""
+
+    class Status(models.TextChoices):
+        NEW = "new", "Yangi"
+        READ = "read", "Ko'rildi"
+        DONE = "done", "Hisobga olindi"
+
+    center = models.ForeignKey(Center, on_delete=models.CASCADE, related_name="suggestions", verbose_name="Markaz")
+    author = models.CharField(max_length=150, verbose_name="Kim yubordi")
+    role = models.CharField(max_length=30, blank=True, verbose_name="Roli")
+    text = models.TextField(max_length=2000, verbose_name="Taklif")
+    contact = models.CharField(max_length=60, blank=True, verbose_name="Aloqa (ixtiyoriy)")
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.NEW, db_index=True, verbose_name="Holati")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Yuborilgan vaqti")
+
+    class Meta:
+        verbose_name = "Taklif"
+        verbose_name_plural = "Takliflar"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.center.name}: {self.text[:40]}"

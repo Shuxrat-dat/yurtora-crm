@@ -2,7 +2,7 @@ from django import forms
 from django.contrib import admin, messages
 
 from . import billing
-from .models import Center, Domain, Plan, SubscriptionPayment
+from .models import Center, Domain, Plan, SubscriptionPayment, Suggestion
 
 
 class DomainInline(admin.TabularInline):
@@ -88,3 +88,20 @@ class SubscriptionPaymentAdmin(admin.ModelAdmin):
             setattr(obj, field.attname, getattr(payment, field.attname))
         obj._state.adding = False
         messages.success(request, f"{payment.center.name}: obuna {payment.period_end:%d.%m.%Y} gacha uzaytirildi.")
+
+
+@admin.register(Suggestion)
+class SuggestionAdmin(admin.ModelAdmin):
+    list_display = ("created_at", "center", "author", "role", "short_text", "status")
+    list_filter = ("status", "center")
+    list_editable = ("status",)
+    search_fields = ("text", "author", "center__name", "contact")
+    readonly_fields = ("center", "author", "role", "text", "contact", "created_at")
+    date_hierarchy = "created_at"
+
+    @admin.display(description="Taklif")
+    def short_text(self, obj):
+        return obj.text[:90] + ("…" if len(obj.text) > 90 else "")
+
+    def has_add_permission(self, request):
+        return False  # takliflar faqat markazlardan keladi

@@ -74,6 +74,14 @@
             <a href="{% url 'finance:receipt_settings' %}" class="yt-link{% if v == 'finance:receipt_settings' %} is-active{% endif %}"><svg class="mv-ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg><span>Sozlamalar</span></a>
             {% endif %}
         </nav>
+        {% if user.role == 'director' or user.role == 'administrator' %}
+        <div class="yt-promo">
+            <span class="yt-promo-ico" aria-hidden="true"><svg class="mv-ico" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 00-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0012 3z"/></svg></span>
+            <b>Yangi imkoniyatlar</b>
+            <p>CRM ni yanada qulayroq qilish uchun takliflaringizni yuboring</p>
+            <a href="{% url 'billing:suggest' %}" class="yt-promo-btn">Taklif yuborish →</a>
+        </div>
+        {% endif %}
     </aside>
 
     <div class="mv-main">
