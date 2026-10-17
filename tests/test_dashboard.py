@@ -446,10 +446,11 @@ class TestDashboardQueryOptimization:
         client.force_login(dashboard_data["admin"])
         center_name()  # markaz nomi keshda (ishchi holat): sahifa uchun alohida so'rov bo'lmaydi
 
-        # Admin: 15 queries (session, user, operational metrics, occupancy, schedule grid).
+        # Admin: 18 queries (session, user, operational metrics, occupancy, schedule grid,
+        # room timeline seat counts, recent students + their open groups).
         # Finance metrics (debtors, monthly income) are skipped for administrator.
         # This is optimized - no N+1 problems
-        with django_assert_num_queries(num=15 + TENANCY_QUERIES_PER_REQUEST, using="default"):
+        with django_assert_num_queries(num=18 + TENANCY_QUERIES_PER_REQUEST, using="default"):
             response = client.get(reverse("accounts:home"))
             assert response.status_code == 200
 
@@ -459,8 +460,8 @@ class TestDashboardQueryOptimization:
         client.force_login(dashboard_data["teacher_user"])
         center_name()  # markaz nomi keshda (ishchi holat)
 
-        # Teacher: 6 queries (session, user, teacher profile, lessons, schedule grid)
+        # Teacher: 7 queries (session, user, teacher profile, lessons, schedule grid, room timeline seat counts)
         # Much fewer than admin - no financial data
-        with django_assert_num_queries(num=6 + TENANCY_QUERIES_PER_REQUEST, using="default"):
+        with django_assert_num_queries(num=7 + TENANCY_QUERIES_PER_REQUEST, using="default"):
             response = client.get(reverse("accounts:home"))
             assert response.status_code == 200

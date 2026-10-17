@@ -259,4 +259,67 @@ def get_schedule_grid_data(
         "grid_matrix": grid_matrix,
         "weekday": weekday,
         "step_minutes": step_minutes,
+        "timeline": build_room_timeline(rooms, slots, step_minutes),
     }
+
+
+def _minutes(t: time) -> int:
+    return t.hour * 60 + t.minute
+
+
+def build_room_timeline(rooms, slots, step_minutes: int = 30) -> dict[str, Any]:
+    """
+    Xonalar bandligi lentasi: har bir dars xona qatorida vaqtiga mos joy va uzunlikda (foizlarda).
+    Ish kuni 08:00–21:00, undan tashqaridagi darslar bo'lsa kun soat chegarasigacha kengaytiriladi.
+    Boshlanishi qadamga to'g'ri kelmaydigan darslar ham ko'rinadi (masalan, 14:15).
+    """
+    start = _minutes(WORK_DAY_START)
+    end = _minutes(WORK_DAY_END)
+    for slot in slots:
+        start = min(start, _minutes(slot.start_time) // 60 * 60)
+        end = max(end, -(-_minutes(slot.end_time) // 60) * 60)
+    span = max(end - start, 60)
+
+    # Guruhdagi o'rinlar: faol + sinov + muzlatilgan a'zolar (bitta so'rov)
+    enrolled = {}
+    group_ids = {slot.group_id for slot in slots}
+    if group_ids:
+        from django.db.models import Count
+
+        enrolled = dict(
+            Enrollment.objects.filter(
+                group_id__in=group_ids,
+                status__in=[Enrollment.Status.ACTIVE, Enrollment.Status.TRIAL, Enrollment.Status.FROZEN],
+            )
+            .values_list("group_id")
+            .annotate(n=Count("id"))
+        )
+
+    rows = []
+    for room in rooms:
+        room_slots = sorted((s for s in slots if s.room_id == room.id), key=lambda s: s.start_time)
+        blocks = []
+        for slot in room_slots:
+            s, e = _minutes(slot.start_time), _minutes(slot.end_time)
+            conflict = any(
+                o.id != slot.id and o.start_time < slot.end_time and o.end_time > slot.start_time
+                for o in room_slots
+            )
+            blocks.append(
+                {
+                    "slot": slot,
+                    "left": (s - start) * 100 / span,
+                    "width": max(e - s, 15) * 100 / span,
+                    "has_conflict": conflict,
+                    "enrolled": enrolled.get(slot.group_id, 0),
+                    "capacity": slot.group.max_students,
+                }
+            )
+        rows.append({"room": room, "blocks": blocks})
+
+    labels = []
+    minute = start
+    while minute <= end:
+        labels.append({"time": time(minute // 60, minute % 60) if minute < 24 * 60 else time(23, 59), "left": (minute - start) * 100 / span})
+        minute += step_minutes
+    return {"rows": rows, "labels": labels, "columns": span // step_minutes}

@@ -1,198 +1,234 @@
 {% extends "base.html" %}
+{% load mv %}
 
 {% block title %}Bosh sahifa — Yurtora CRM{% endblock %}
 
 {% block content %}
-<div class="space-y-6">
-    <!-- Muqova: salomlashish, bugungi holat va tezkor amallar -->
-    <section class="mv-cover">
-        <div>
-            <p class="mv-cover-date">{% now "l, j F" %}</p>
-            <h1 class="mv-cover-title">Xush kelibsiz, {{ user.first_name|default:user.username }}</h1>
-            <p class="mv-cover-sub">
-                {% if is_teacher %}
-                Bugun sizda <strong>{{ today_lessons|length }} ta dars</strong>.
-                {% else %}
-                Bugun <strong>{{ metrics.today_lessons }} ta dars</strong>, xonalar bandligi <strong>{{ room_occupancy }}%</strong>.
-                {% endif %}
-            </p>
-        </div>
-        <div class="mv-cover-actions">
-            <button type="button" class="mv-btn mv-btn--light mv-ds-open-btn" data-ds-open>
-                <svg class="mv-ico" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
-                Kunlik statistika
-            </button>
-            {% if not is_teacher %}
-            <a href="{% url 'students:student_create' %}" class="mv-btn mv-btn--ghost-dark">
-                <svg class="mv-ico" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 3-6 6.5-6s6.5 2.4 6.5 6"/><path d="M19 8v6M16 11h6"/></svg>
-                Yangi o'quvchi
-            </a>
-            {% endif %}
-            {% if user.role == 'director' %}
-            <a href="{% url 'finance:debtors_list' %}" class="mv-btn mv-btn--ghost-dark">
-                <svg class="mv-ico" viewBox="0 0 24 24"><path d="M12 3l9.5 17h-19L12 3z"/><path d="M12 10v4M12 17.5v.01"/></svg>
-                Qarzdorlar
-            </a>
-            {% endif %}
-        </div>
-    </section>
-
-    {% if is_teacher %}
-    <!-- O'qituvchi: bugungi darslar -->
-    <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-        <h2 class="text-lg font-bold mb-4">Bugungi darslarim</h2>
-        {% if today_lessons %}
-        <div class="space-y-3">
-            {% for lesson in today_lessons %}
-            <div class="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-200">
-                <div>
-                    <div class="font-semibold text-slate-900">{{ lesson.group.name }}</div>
-                    <div class="text-sm text-slate-600">{{ lesson.group.course.name }}</div>
+<div class="yt-home{% if is_teacher %} is-teacher{% endif %}">
+    <div class="yt-home-main">
+        <!-- Salomlashish -->
+        <section class="yt-hero">
+            <div>
+                <p class="yt-hero-date">{% now "l, j F" %}</p>
+                <h1 class="yt-hero-title">Xush kelibsiz, {{ user.first_name|default:user.username }}</h1>
+                <p class="yt-hero-sub">
+                    {% if is_teacher %}
+                    Bugun sizda <strong>{{ today_lessons|length }} ta dars</strong>.
+                    {% else %}
+                    Bugun <strong>{{ metrics.today_lessons }} ta dars</strong>, xonalar bandligi <strong>{{ room_occupancy }}%</strong>.
+                    {% endif %}
+                </p>
+                <div class="yt-hero-actions">
+                    <button type="button" class="mv-btn mv-btn--light mv-ds-open-btn" data-ds-open>
+                        <svg class="mv-ico" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+                        Kunlik statistika
+                    </button>
                 </div>
-                <div class="text-right">
-                    <div class="text-sm font-medium text-slate-900">
-                        {{ lesson.start_time|time:"H:i" }}–{{ lesson.end_time|time:"H:i" }}
+            </div>
+            <div class="yt-hero-art">{% include "includes/hero_building.svg" %}</div>
+        </section>
+
+        {% if is_teacher %}
+        <!-- O'qituvchi: bugungi darslar -->
+        <section class="yt-card">
+            <div class="yt-card-head"><h2>Bugungi darslarim</h2></div>
+            {% if today_lessons %}
+            <div class="space-y-3">
+                {% for lesson in today_lessons %}
+                <div class="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-200">
+                    <div>
+                        <div class="font-semibold text-slate-900">{{ lesson.group.name }}</div>
+                        <div class="text-sm text-slate-600">{{ lesson.group.course.name }}</div>
                     </div>
-                    <div class="text-xs text-slate-500">{{ lesson.room.name }}</div>
+                    <div class="text-right">
+                        <div class="text-sm font-medium text-slate-900">{{ lesson.start_time|time:"H:i" }}–{{ lesson.end_time|time:"H:i" }}</div>
+                        <div class="text-xs text-slate-500">{{ lesson.room.name }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-slate-500 text-sm">Bugun darsingiz yo'q.</p>
+            {% endif %}
+        </section>
+        {% else %}
+        <!-- Ko'rsatkichlar (raqamlar yashirin, ko'z tugmasi bilan ochiladi; tanlov shu brauzerda eslab qolinadi) -->
+        <section class="yt-kpis">
+            <div class="mv-stats-head">
+                <h2>Ko'rsatkichlar</h2>
+                <button id="toggle-numbers" type="button" class="mv-btn yt-eye"><svg class="mv-ico" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span>Raqamlarni ko'rish</span></button>
+            </div>
+            <div class="yt-kpi-grid">
+                <a href="{% url 'students:student_list' %}?status=active" class="yt-kpi yt-kpi--teal">
+                    <span class="yt-kpi-ico"><svg class="mv-ico" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 3-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16 4.5a3.5 3.5 0 010 7M18 14.5c2 .6 3.5 2.4 3.5 5.5"/></svg></span>
+                    <span class="yt-kpi-body"><span class="yt-kpi-label">Faol o'quvchilar</span><span class="yt-kpi-value number" data-value="{{ metrics.active_students }}">***</span></span>
+                </a>
+                <a href="{% url 'groups:group_list' %}" class="yt-kpi yt-kpi--steel">
+                    <span class="yt-kpi-ico"><svg class="mv-ico" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></svg></span>
+                    <span class="yt-kpi-body"><span class="yt-kpi-label">Faol guruhlar</span><span class="yt-kpi-value number" data-value="{{ metrics.active_groups }}">***</span></span>
+                </a>
+                {% if user.role == 'director' %}
+                <a href="{% url 'finance:debtors_list' %}" class="yt-kpi yt-kpi--red">
+                    <span class="yt-kpi-ico"><svg class="mv-ico" viewBox="0 0 24 24"><path d="M12 3l9.5 17h-19L12 3z"/><path d="M12 10v4M12 17.5v.01"/></svg></span>
+                    <span class="yt-kpi-body"><span class="yt-kpi-label">Qarzdorlar</span><span class="yt-kpi-value number" data-value="{{ metrics.debtors_count }}">***</span></span>
+                </a>
+                <a href="{% url 'finance:debtors_list' %}" class="yt-kpi yt-kpi--red">
+                    <span class="yt-kpi-ico"><svg class="mv-ico" viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h13v4"/><path d="M3 7v11a2 2 0 002 2h15V9H5a2 2 0 01-2-2z"/><circle cx="16.5" cy="14.5" r="1"/></svg></span>
+                    <span class="yt-kpi-body"><span class="yt-kpi-label">Umumiy qarz, so'm</span><span class="yt-kpi-value number" data-value="{{ metrics.total_debt }}" data-format="money">***</span></span>
+                </a>
+                <div class="yt-kpi yt-kpi--ok">
+                    <span class="yt-kpi-ico"><svg class="mv-ico" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span>
+                    <span class="yt-kpi-body"><span class="yt-kpi-label">Oylik tushum, so'm</span><span class="yt-kpi-value number" data-value="{{ metrics.monthly_income }}" data-format="money">***</span></span>
+                </div>
+                {% endif %}
+            </div>
+            <div class="yt-kpi-grid yt-kpi-grid--small">
+                <div class="yt-kpi yt-kpi--gold">
+                    <span class="yt-kpi-ico"><svg class="mv-ico" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3h6v3H9zM9 11h6M9 15h4"/></svg></span>
+                    <span class="yt-kpi-body"><span class="yt-kpi-label">Guruhlardagi o'rinlar</span><span class="yt-kpi-value number" data-value="{{ metrics.total_enrollments }}">***</span></span>
+                </div>
+                <div class="yt-kpi yt-kpi--steel">
+                    <span class="yt-kpi-ico"><svg class="mv-ico" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></span>
+                    <span class="yt-kpi-body"><span class="yt-kpi-label">Bugungi darslar</span><span class="yt-kpi-value number" data-value="{{ metrics.today_lessons }}">***</span></span>
+                </div>
+                <a href="{% url 'students:student_list' %}?status=trial" class="yt-kpi yt-kpi--violet">
+                    <span class="yt-kpi-ico"><svg class="mv-ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><path d="M12 12h.01"/></svg></span>
+                    <span class="yt-kpi-body"><span class="yt-kpi-label">Sinov darsida</span><span class="yt-kpi-value number" data-value="{{ metrics.trial_count }}">***</span></span>
+                </a>
+                <div class="yt-kpi yt-kpi--ok">
+                    <span class="yt-kpi-ico"><svg class="mv-ico" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 3-6 6.5-6s6.5 2.4 6.5 6"/><path d="M19 8v6M16 11h6"/></svg></span>
+                    <span class="yt-kpi-body"><span class="yt-kpi-label">Yangi qabul</span><span class="yt-kpi-value number" data-value="{{ metrics.new_enrollments }}">***</span></span>
+                </div>
+                <a href="{% url 'students:student_list' %}?status=frozen" class="yt-kpi yt-kpi--cyan">
+                    <span class="yt-kpi-ico"><svg class="mv-ico" viewBox="0 0 24 24"><path d="M12 2v20M3.3 7l17.4 10M20.7 7L3.3 17"/></svg></span>
+                    <span class="yt-kpi-body"><span class="yt-kpi-label">Muzlatilgan</span><span class="yt-kpi-value number" data-value="{{ metrics.frozen_count }}">***</span></span>
+                </a>
+                <div class="yt-kpi yt-kpi--gold">
+                    <span class="yt-kpi-ico"><svg class="mv-ico" viewBox="0 0 24 24"><path d="M9 4H5v16h4"/><path d="M14 8l4 4-4 4M18 12H9"/></svg></span>
+                    <span class="yt-kpi-body"><span class="yt-kpi-label">Ketganlar</span><span class="yt-kpi-value number" data-value="{{ metrics.left_students }}">***</span></span>
+                </div>
+                <a href="{% url 'teachers:teacher_list' %}" class="yt-kpi">
+                    <span class="yt-kpi-ico"><svg class="mv-ico" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 3-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16 11l2 2 4-4"/></svg></span>
+                    <span class="yt-kpi-body"><span class="yt-kpi-label">O'qituvchilar</span><span class="yt-kpi-value number" data-value="{{ metrics.active_teachers }}">***</span></span>
+                </a>
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- Xonalar bandligi -->
+        <section class="yt-card">
+            <div class="yt-card-head">
+                <h2><svg class="mv-ico" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Xonalar bandligi</h2>
+                <div class="yt-sched-tools">
+                    <button type="button" class="yt-sq-btn is-prev" onclick="shiftWeekday(-1)" aria-label="Oldingi kun"><i class="yt-chev-r"></i></button>
+                    <button type="button" class="yt-sq-btn" onclick="shiftWeekday(1)" aria-label="Keyingi kun"><i class="yt-chev-r"></i></button>
+                    <button type="button" class="yt-today-btn" onclick="changeWeekday({{ today_weekday }})"><svg class="mv-ico" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Bugun</button>
+                    <select id="step-select" aria-label="Vaqt qadami" onchange="changeStep(this.value)">
+                        <option value="15">15 daqiqa</option>
+                        <option value="30" selected>30 daqiqa</option>
+                        <option value="60">60 daqiqa</option>
+                    </select>
                 </div>
             </div>
-            {% endfor %}
-        </div>
-        {% else %}
-        <p class="text-slate-500 text-sm">Bugun darsingiz yo'q.</p>
-        {% endif %}
-    </section>
 
-    {% else %}
-    <!-- Direktor va administrator: asosiy ko'rsatkichlar (raqamlar yashirin, tugma bilan ochiladi) -->
-    <section class="space-y-3">
-        <div class="mv-stats-head">
-            <h2>Ko'rsatkichlar</h2>
-            <button id="toggle-numbers" type="button" class="mv-btn" onclick="toggleNumbers()">Raqamlarni ko'rish</button>
-        </div>
-        <div class="mv-stats">
-            <a href="{% url 'groups:group_list' %}" class="mv-stat mv-stat--steel">
-                <span class="mv-stat-top"><span class="mv-stat-ico"><svg class="mv-ico" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></svg></span>Faol guruhlar</span>
-                <span class="mv-stat-value number" data-value="{{ metrics.active_groups }}">***</span>
-            </a>
-            <a href="{% url 'students:student_list' %}?status=active" class="mv-stat">
-                <span class="mv-stat-top"><span class="mv-stat-ico"><svg class="mv-ico" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 3-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16 4.5a3.5 3.5 0 010 7M18 14.5c2 .6 3.5 2.4 3.5 5.5"/></svg></span>Faol o'quvchilar</span>
-                <span class="mv-stat-value number" data-value="{{ metrics.active_students }}">***</span>
-            </a>
-            <div class="mv-stat">
-                <span class="mv-stat-top"><span class="mv-stat-ico"><svg class="mv-ico" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3h6v3H9zM9 11h6M9 15h4"/></svg></span>Guruhlardagi o'rinlar</span>
-                <span class="mv-stat-value number" data-value="{{ metrics.total_enrollments }}">***</span>
+            <div class="mv-tabs mb-3" role="tablist">
+                {% for day_name in weekday_names %}
+                <button type="button" role="tab"
+                    class="mv-tab weekday-tab{% if forloop.counter0 == today_weekday %} is-active{% endif %}"
+                    aria-selected="{% if forloop.counter0 == today_weekday %}true{% else %}false{% endif %}"
+                    data-weekday="{{ forloop.counter0 }}"
+                    onclick="changeWeekday({{ forloop.counter0 }})">{{ day_name }}</button>
+                {% endfor %}
             </div>
-            {% if user.role == 'director' %}
-            <a href="{% url 'finance:debtors_list' %}" class="mv-stat mv-stat--red">
-                <span class="mv-stat-top"><span class="mv-stat-ico"><svg class="mv-ico" viewBox="0 0 24 24"><path d="M12 3l9.5 17h-19L12 3z"/><path d="M12 10v4M12 17.5v.01"/></svg></span>Qarzdorlar</span>
-                <span class="mv-stat-value number" data-value="{{ metrics.debtors_count }}">***</span>
-            </a>
-            <a href="{% url 'finance:debtors_list' %}" class="mv-stat mv-stat--red">
-                <span class="mv-stat-top"><span class="mv-stat-ico"><svg class="mv-ico" viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h13v4"/><path d="M3 7v11a2 2 0 002 2h15V9H5a2 2 0 01-2-2z"/><circle cx="16.5" cy="14.5" r="1"/></svg></span>Umumiy qarz, so'm</span>
-                <span class="mv-stat-value is-money number" data-value="{{ metrics.total_debt }}" data-format="money">***</span>
-            </a>
-            {% endif %}
-            <a href="{% url 'students:student_list' %}?status=trial" class="mv-stat mv-stat--violet">
-                <span class="mv-stat-top"><span class="mv-stat-ico"><svg class="mv-ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><path d="M12 12h.01"/></svg></span>Sinov darsida</span>
-                <span class="mv-stat-value number" data-value="{{ metrics.trial_count }}">***</span>
-            </a>
-            <a href="{% url 'students:student_list' %}?status=frozen" class="mv-stat mv-stat--cyan">
-                <span class="mv-stat-top"><span class="mv-stat-ico"><svg class="mv-ico" viewBox="0 0 24 24"><path d="M12 2v20M3.3 7l17.4 10M20.7 7L3.3 17"/></svg></span>Muzlatilgan</span>
-                <span class="mv-stat-value number" data-value="{{ metrics.frozen_count }}">***</span>
-            </a>
-            <div class="mv-stat mv-stat--gold">
-                <span class="mv-stat-top"><span class="mv-stat-ico"><svg class="mv-ico" viewBox="0 0 24 24"><path d="M9 4H5v16h4"/><path d="M14 8l4 4-4 4M18 12H9"/></svg></span>Ketganlar</span>
-                <span class="mv-stat-value number" data-value="{{ metrics.left_students }}">***</span>
+
+            <!-- Lenta HTMX orqali yuklanadi -->
+            <div id="schedule-grid-container"
+                 hx-get="{% url 'accounts:dashboard_schedule_grid' %}?weekday={{ today_weekday }}&step=30"
+                 hx-trigger="load" hx-swap="innerHTML">
+                <div class="text-center py-8 text-slate-400">Yuklanmoqda…</div>
             </div>
-            <div class="mv-stat mv-stat--ok">
-                <span class="mv-stat-top"><span class="mv-stat-ico"><svg class="mv-ico" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 3-6 6.5-6s6.5 2.4 6.5 6"/><path d="M19 8v6M16 11h6"/></svg></span>Yangi qabul</span>
-                <span class="mv-stat-value number" data-value="{{ metrics.new_enrollments }}">***</span>
+        </section>
+    </div>
+
+    {% if not is_teacher %}
+    <aside class="yt-home-side">
+        <section class="yt-card">
+            <div class="yt-card-head"><h2>Tezkor amallar</h2></div>
+            <div class="yt-quick">
+                {% if user.role == 'director' or user.role == 'administrator' %}
+                <a href="{% url 'students:student_create' %}" class="yt-quick-item" style="--tone: #16a34a"><span class="yt-quick-ico"><svg class="mv-ico" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 3-6 6.5-6s6.5 2.4 6.5 6"/><path d="M19 8v6M16 11h6"/></svg></span>Yangi o'quvchi</a>
+                <a href="{% url 'groups:group_create' %}" class="yt-quick-item" style="--tone: #2563eb"><span class="yt-quick-ico"><svg class="mv-ico" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><circle cx="17" cy="9" r="2.5"/><path d="M2.5 20c0-3.6 3-6 6.5-6s6.5 2.4 6.5 6M15.5 14.2c3 .2 5.5 2 5.5 5.8"/></svg></span>Yangi guruh</a>
+                {% endif %}
+                <button type="button" class="yt-quick-item" style="--tone: #d97706" data-pay-open><span class="yt-quick-ico"><svg class="mv-ico" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg></span>To'lov qabul qilish</button>
+                <a href="{% url 'students:student_list' %}?status=trial" class="yt-quick-item" style="--tone: #7c3aed"><span class="yt-quick-ico"><svg class="mv-ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><path d="M12 12h.01"/></svg></span>Sinov darsi</a>
             </div>
-            <a href="{% url 'teachers:teacher_list' %}" class="mv-stat">
-                <span class="mv-stat-top"><span class="mv-stat-ico"><svg class="mv-ico" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 3-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16 11l2 2 4-4"/></svg></span>O'qituvchilar</span>
-                <span class="mv-stat-value number" data-value="{{ metrics.active_teachers }}">***</span>
-            </a>
-            <div class="mv-stat mv-stat--steel">
-                <span class="mv-stat-top"><span class="mv-stat-ico"><svg class="mv-ico" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></span>Bugungi darslar</span>
-                <span class="mv-stat-value number" data-value="{{ metrics.today_lessons }}">***</span>
-            </div>
-            {% if user.role == 'director' %}
-            <div class="mv-stat mv-stat--ok">
-                <span class="mv-stat-top"><span class="mv-stat-ico"><svg class="mv-ico" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span>Oylik tushum, so'm</span>
-                <span class="mv-stat-value is-money number" data-value="{{ metrics.monthly_income }}" data-format="money">***</span>
-            </div>
-            {% endif %}
-        </div>
-    </section>
+        </section>
+
+        <section class="yt-card">
+            <div class="yt-card-head"><h2>So'nggi o'quvchilar</h2><a href="{% url 'students:student_list' %}">Barchasi →</a></div>
+            <ul class="yt-recent">
+                {% for s in recent_students %}
+                <li>
+                    <a href="{% url 'students:student_detail' s.pk %}">
+                        <span class="yt-ava mv-tone-{{ s.pk|tone }}" aria-hidden="true">{{ s.last_name|first|upper }}{{ s.first_name|first|upper }}</span>
+                        <span class="yt-recent-main"><b>{{ s.last_name }} {{ s.first_name }}</b><small>{{ s.recent_group|default:"Guruhsiz" }} · {{ s.added_label }}</small></span>
+                        <i class="yt-chev-r" aria-hidden="true"></i>
+                    </a>
+                </li>
+                {% empty %}
+                <li class="yt-empty">Hali o'quvchi qo'shilmagan.</li>
+                {% endfor %}
+            </ul>
+        </section>
+    </aside>
     {% endif %}
-
-    <!-- Xonalar bandligi -->
-    <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-        <div class="flex items-center justify-between gap-4 mb-4">
-            <h2 class="text-lg font-bold">Xonalar bandligi</h2>
-            <label class="flex items-center gap-2 text-sm text-slate-600">
-                Qadam
-                <select id="step-select" class="border border-slate-300 rounded-md px-3 py-1 text-sm" onchange="changeStep(this.value)">
-                    <option value="15">15 daqiqa</option>
-                    <option value="30" selected>30 daqiqa</option>
-                    <option value="60">60 daqiqa</option>
-                </select>
-            </label>
-        </div>
-
-        <div class="mv-tabs mb-4" role="tablist">
-            {% for day_name in weekday_names %}
-            <button type="button" role="tab"
-                class="mv-tab weekday-tab{% if forloop.counter0 == today_weekday %} is-active{% endif %}"
-                aria-selected="{% if forloop.counter0 == today_weekday %}true{% else %}false{% endif %}"
-                data-weekday="{{ forloop.counter0 }}"
-                onclick="changeWeekday({{ forloop.counter0 }})">{{ day_name }}</button>
-            {% endfor %}
-        </div>
-
-        <!-- Jadval HTMX orqali yuklanadi -->
-        <div id="schedule-grid-container"
-             hx-get="{% url 'accounts:dashboard_schedule_grid' %}?weekday={{ today_weekday }}&step=30"
-             hx-trigger="load" hx-swap="innerHTML">
-            <div class="text-center py-8 text-slate-400">Yuklanmoqda…</div>
-        </div>
-    </section>
 </div>
 
 <script>
-// Raqamlarni ko'rsatish/yashirish
-let numbersVisible = false;
-
-function toggleNumbers() {
-    numbersVisible = !numbersVisible;
+// Raqamlarni ko'rsatish/yashirish: tanlov shu brauzerda eslab qolinadi
+(function () {
+    const KEY = 'yt-show-numbers';
     const button = document.getElementById('toggle-numbers');
-    document.querySelectorAll('.number').forEach(el => {
-        const value = el.getAttribute('data-value');
-        if (!numbersVisible) { el.textContent = '***'; return; }
-        el.textContent = el.getAttribute('data-format') === 'money'
-            ? parseInt(value, 10).toLocaleString('ru-RU').replace(/,/g, ' ')
-            : value;
+    if (!button) return;
+    const label = button.querySelector('span');
+    const render = (visible) => {
+        document.querySelectorAll('.number').forEach((el) => {
+            const value = el.getAttribute('data-value');
+            if (!visible) { el.textContent = '***'; return; }
+            el.textContent = el.getAttribute('data-format') === 'money'
+                ? parseInt(value, 10).toLocaleString('ru-RU').replace(/[\u00a0\u202f,]/g, ' ')
+                : value;
+        });
+        label.textContent = visible ? "Raqamlarni yashirish" : "Raqamlarni ko'rish";
+    };
+    let visible = false;
+    try { visible = localStorage.getItem(KEY) === '1'; } catch (e) {}
+    render(visible);
+    button.addEventListener('click', () => {
+        visible = !visible;
+        try { localStorage.setItem(KEY, visible ? '1' : '0'); } catch (e) {}
+        render(visible);
     });
-    button.textContent = numbersVisible ? 'Raqamlarni yashirish' : 'Raqamlarni ko\'rish';
-}
+})();
 
-// Hafta kunini almashtirish (HTMX)
+// Hafta kuni va vaqt qadami (HTMX)
+const gridUrl = "{% url 'accounts:dashboard_schedule_grid' %}";
+function currentWeekday() {
+    const tab = document.querySelector('.weekday-tab.is-active');
+    return tab ? parseInt(tab.getAttribute('data-weekday'), 10) : {{ today_weekday }};
+}
 function changeWeekday(weekday) {
     const step = document.getElementById('step-select').value;
-    document.querySelectorAll('.weekday-tab').forEach(tab => {
+    document.querySelectorAll('.weekday-tab').forEach((tab) => {
         const active = parseInt(tab.getAttribute('data-weekday'), 10) === weekday;
         tab.classList.toggle('is-active', active);
         tab.setAttribute('aria-selected', active ? 'true' : 'false');
     });
-    htmx.ajax('GET', `{% url 'accounts:dashboard_schedule_grid' %}?weekday=${weekday}&step=${step}`, '#schedule-grid-container');
+    htmx.ajax('GET', `${gridUrl}?weekday=${weekday}&step=${step}`, '#schedule-grid-container');
 }
-
-// Qadamni almashtirish
+function shiftWeekday(delta) { changeWeekday((currentWeekday() + delta + 7) % 7); }
 function changeStep(step) {
-    const activeTab = document.querySelector('.weekday-tab.is-active');
-    const weekday = activeTab ? activeTab.getAttribute('data-weekday') : {{ today_weekday }};
-    htmx.ajax('GET', `{% url 'accounts:dashboard_schedule_grid' %}?weekday=${weekday}&step=${step}`, '#schedule-grid-container');
+    htmx.ajax('GET', `${gridUrl}?weekday=${currentWeekday()}&step=${step}`, '#schedule-grid-container');
 }
 </script>
 

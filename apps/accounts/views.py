@@ -50,6 +50,34 @@ class LogoutView(BaseLogoutView):
     next_page = reverse_lazy("accounts:login")
 
 
+def recent_students(limit: int = 5):
+    """Bosh sahifa: oxirgi qo'shilgan o'quvchilar, birinchi ochiq guruhi va qo'shilgan vaqti."""
+    from django.db.models import Prefetch
+
+    from apps.groups.models import Enrollment
+    from apps.students.models import Student
+
+    open_enrollments = Prefetch(
+        "enrollments",
+        queryset=Enrollment.objects.filter(
+            status__in=[Enrollment.Status.ACTIVE, Enrollment.Status.TRIAL, Enrollment.Status.FROZEN]
+        ).select_related("group").order_by("-start_date", "-pk"),
+        to_attr="open_list",
+    )
+    students = list(Student.objects.order_by("-created_at", "-pk").prefetch_related(open_enrollments)[:limit])
+    today = timezone.localdate()
+    for s in students:
+        s.recent_group = s.open_list[0].group.name if s.open_list else ""
+        added = timezone.localtime(s.created_at)
+        if added.date() == today:
+            s.added_label = f"Bugun {added:%H:%M}"
+        elif added.date() == today - timedelta(days=1):
+            s.added_label = f"Kecha {added:%H:%M}"
+        else:
+            s.added_label = f"{added:%d.%m.%Y}"
+    return students
+
+
 class HomeView(LoginRequiredMixin, TemplateView):
     """Главная страница после авторизации."""
 
@@ -94,6 +122,7 @@ class HomeView(LoginRequiredMixin, TemplateView):
             context["schedule_grid"] = get_schedule_grid_data(
                 weekday=today_weekday, step_minutes=30
             )
+            context["recent_students"] = recent_students()
 
         # Weekday names for tabs
         context["weekday_names"] = [
