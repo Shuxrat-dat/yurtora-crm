@@ -588,3 +588,7 @@ button.mv-cell:disabled { opacity: .5; cursor: progress; }
 .mv-card-layout { grid-template-columns: minmax(0, 1fr); }
 .mv-card-layout > * { min-width: 0; }
 @media (min-width: 1100px) { .mv-card-layout { grid-template-columns: 21rem minmax(0, 1fr); } .mv-group-layout { grid-template-columns: 22rem minmax(0, 1fr); } }
+
+/* Yuqori menyu o'rta kenglikda bir qatorda qoladi */
+.mv-link, .mv-pay-btn { white-space: nowrap; }
+@media (max-width: 1279px) { .yt-user-meta { display: none !important; } .yt-pay-text { display: none; } }
