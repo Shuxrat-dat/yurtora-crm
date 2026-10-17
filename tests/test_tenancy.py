@@ -101,6 +101,15 @@ def test_internal_endpoints_work_from_any_host():
     assert Client(HTTP_HOST="testcenter.localhost").get("/healthz/").content == b"ok"
 
 
+def test_internal_endpoints_skip_https_redirect(settings):
+    """Caddy on-demand TLS so'rovi http orqali keladi va redirectni qabul qilmaydi."""
+    settings.SECURE_SSL_REDIRECT = True
+    internal = Client(HTTP_HOST="localhost")
+    assert internal.get("/_tls/check/", {"domain": "testcenter.localhost"}).status_code == 200
+    assert internal.get("/healthz/").status_code == 200
+    assert Client(HTTP_HOST="testcenter.localhost").get("/login/").status_code == 301
+
+
 # --- signup -------------------------------------------------------------------
 
 

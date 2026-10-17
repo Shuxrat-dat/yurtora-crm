@@ -195,6 +195,8 @@ LOGOUT_REDIRECT_URL = "accounts:login"
 
 # Production xavfsizlik sozlamalari (DEBUG=False bo'lganda yoqiladi, env orqali boshqariladi)
 CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
+# Caddy ichki tarmoqdan http orqali so'raydi va redirectni qabul qilmaydi (on-demand TLS, healthcheck)
+SECURE_REDIRECT_EXEMPT = [r"^_tls/check/$", r"^healthz/$"]
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SECURE_SSL_REDIRECT = env.bool("SECURE_SSL_REDIRECT", default=True)
