@@ -1,12 +1,20 @@
 """Markaz direktori uchun "Obuna" sahifasi (markaz manzilida: /billing/)."""
 
-from django.conf import settings
-from django.views.generic import TemplateView
+from datetime import timedelta
 
+from django import forms
+from django.conf import settings
+from django.contrib import messages
+from django.shortcuts import redirect
+from django.utils import timezone
+from django.views.generic import FormView, TemplateView
+from django_tenants.utils import get_public_schema_name, schema_context
+
+from apps.accounts.models import User
 from apps.accounts.permissions import RoleRequiredMixin
 
 from . import billing
-from .models import Plan
+from .models import Plan, Suggestion
 
 
 class BillingView(RoleRequiredMixin, TemplateView):
@@ -26,20 +34,6 @@ class BillingView(RoleRequiredMixin, TemplateView):
         )
         return context
 
-
-
-from datetime import timedelta  # noqa: E402
-
-from django import forms  # noqa: E402
-from django.contrib import messages  # noqa: E402
-from django.shortcuts import redirect  # noqa: E402
-from django.utils import timezone  # noqa: E402
-from django.views.generic import FormView  # noqa: E402
-from django_tenants.utils import get_public_schema_name, schema_context  # noqa: E402
-
-from apps.accounts.models import User  # noqa: E402
-
-from .models import Suggestion  # noqa: E402
 
 SUGGEST_LIMIT_PER_HOUR = 5
 

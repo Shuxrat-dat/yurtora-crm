@@ -1,9 +1,17 @@
+from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
-from django.views.generic import TemplateView
+from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse_lazy
+from django.views import View
+from django.views.generic import CreateView, ListView, TemplateView, UpdateView
 
 from apps.accounts.permissions import RoleRequiredMixin
+from apps.core.forms import GoalForm
+from apps.core.goals import goal_progress
+from apps.core.reports import reports_for
 
-from .models import AuditLog
+from .models import AuditLog, Goal
 
 
 class AuditLogListView(RoleRequiredMixin, TemplateView):
@@ -41,20 +49,7 @@ class AuditLogListView(RoleRequiredMixin, TemplateView):
         return ctx
 
 
-
-from django.contrib import messages  # noqa: E402
-from django.shortcuts import get_object_or_404, redirect  # noqa: E402
-from django.urls import reverse_lazy  # noqa: E402
-from django.views import View  # noqa: E402
-from django.views.generic import CreateView, ListView, UpdateView  # noqa: E402
-
-from apps.accounts.permissions import RoleRequiredMixin as _RoleRequired  # noqa: E402
-from apps.core.forms import GoalForm  # noqa: E402
-from apps.core.goals import goal_progress  # noqa: E402
-from apps.core.models import Goal  # noqa: E402
-
-
-class GoalListView(_RoleRequired, ListView):
+class GoalListView(RoleRequiredMixin, ListView):
     """Maqsadlar ro'yxati (faqat direktor)."""
 
     model = Goal
@@ -67,7 +62,7 @@ class GoalListView(_RoleRequired, ListView):
         return context
 
 
-class GoalCreateView(_RoleRequired, CreateView):
+class GoalCreateView(RoleRequiredMixin, CreateView):
     model = Goal
     form_class = GoalForm
     template_name = "core/goal_form.html"
@@ -82,7 +77,7 @@ class GoalCreateView(_RoleRequired, CreateView):
         return super().form_valid(form)
 
 
-class GoalUpdateView(_RoleRequired, UpdateView):
+class GoalUpdateView(RoleRequiredMixin, UpdateView):
     model = Goal
     form_class = GoalForm
     template_name = "core/goal_form.html"
@@ -94,7 +89,7 @@ class GoalUpdateView(_RoleRequired, UpdateView):
         return super().form_valid(form)
 
 
-class GoalMainView(_RoleRequired, View):
+class GoalMainView(RoleRequiredMixin, View):
     """Maqsadni bosh sahifada ko'rsatiladigan asosiy maqsad qilish."""
 
     allowed_roles = ()
@@ -107,10 +102,21 @@ class GoalMainView(_RoleRequired, View):
         return redirect("goals:goal_list")
 
 
-class GoalDeleteView(_RoleRequired, View):
+class GoalDeleteView(RoleRequiredMixin, View):
     allowed_roles = ()
 
     def post(self, request, pk):
         get_object_or_404(Goal, pk=pk).delete()
         messages.success(request, "Maqsad o'chirildi.")
         return redirect("goals:goal_list")
+
+
+class ReportsView(LoginRequiredMixin, TemplateView):
+    """Barcha hisobotlar bir joyda (rolga mos)."""
+
+    template_name = "core/reports.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["sections"] = reports_for(self.request.user)
+        return context

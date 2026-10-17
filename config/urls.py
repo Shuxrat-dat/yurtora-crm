@@ -13,6 +13,7 @@ urlpatterns = [
     path("schedule/", include("apps.schedule.urls", namespace="schedule")),
     path("audit/", include("apps.core.urls", namespace="core")),
     path("goals/", include("apps.core.goal_urls", namespace="goals")),
+    path("reports/", include("apps.core.report_urls", namespace="reports")),
     path("notifications/", include("apps.notifications.urls", namespace="notifications")),
     path("finance/", include("apps.finance.urls", namespace="finance")),
     path("billing/", include("apps.tenants.billing_urls", namespace="billing")),
