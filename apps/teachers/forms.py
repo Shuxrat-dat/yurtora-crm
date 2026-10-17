@@ -2,10 +2,9 @@
 
 from django import forms
 
-from apps.core.forms import MoneyField, MoneyInput
-
 from apps.accounts.models import User
 from apps.accounts.permissions import user_has_role
+from apps.core.forms import MoneyField, MoneyInput
 from apps.teachers.models import Teacher
 
 # Ish haqi maydonlari: faqat direktor ko'radi va o'zgartiradi (FOT).

@@ -3,7 +3,6 @@
 from django import forms
 
 from apps.core.forms import MoneyField, MoneyInput
-
 from apps.courses.models import Course
 
 
