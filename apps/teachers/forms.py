@@ -2,6 +2,8 @@
 
 from django import forms
 
+from apps.core.forms import MoneyField, MoneyInput
+
 from apps.accounts.models import User
 from apps.accounts.permissions import user_has_role
 from apps.teachers.models import Teacher
@@ -23,6 +25,7 @@ class TeacherForm(forms.ModelForm):
     class Meta:
         model = Teacher
         fields = ["full_name", "phone", "user", "pay_type", "monthly_salary", "base_percent", "is_active"]
+        field_classes = {"monthly_salary": MoneyField}
         widgets = {
             "full_name": forms.TextInput(
                 attrs={
@@ -46,7 +49,7 @@ class TeacherForm(forms.ModelForm):
                     "class": "w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 }
             ),
-            "monthly_salary": forms.NumberInput(
+            "monthly_salary": MoneyInput(
                 attrs={
                     "class": "w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none",
                     "placeholder": "Oylik maosh (so'm)",

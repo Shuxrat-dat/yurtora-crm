@@ -35,6 +35,25 @@ class RoomForm(forms.ModelForm):
         }
 
 
+def slot_clashes(*, weekday, start, end, group, room, exclude_pk=None, day_label=""):
+    """Xona, guruh va o'qituvchi bandligi: [(maydon, xabar), ...]. day_label — bir nechta kun tanlanganda."""
+    prefix = f"{day_label}: " if day_label else ""
+    overlapping = ScheduleSlot.objects.filter(
+        weekday=weekday, is_active=True, start_time__lt=end, end_time__gt=start
+    ).exclude(pk=exclude_pk)
+    errors = []
+    clash = overlapping.filter(room=room).select_related("group").first()
+    if clash:
+        errors.append(("room", f"{prefix}Bu xona shu vaqtda band: {clash.group.name} ({clash.start_time:%H:%M}–{clash.end_time:%H:%M})."))
+    clash = overlapping.filter(group=group).first()
+    if clash:
+        errors.append(("start_time", f"{prefix}Bu guruhning shu kuni {clash.start_time:%H:%M}–{clash.end_time:%H:%M} da boshqa darsi bor."))
+    clash = overlapping.filter(group__teacher=group.teacher).exclude(group=group).select_related("group").first()
+    if clash:
+        errors.append(("group", f"{prefix}O'qituvchi shu vaqtda band: {clash.group.name} ({clash.start_time:%H:%M}–{clash.end_time:%H:%M})."))
+    return errors
+
+
 class ScheduleSlotForm(forms.ModelForm):
     def clean(self):
         cleaned = super().clean()
@@ -46,18 +65,10 @@ class ScheduleSlotForm(forms.ModelForm):
             return cleaned
         group, room, weekday = cleaned.get("group"), cleaned.get("room"), cleaned.get("weekday")
         if cleaned.get("is_active") and group is not None and room is not None and weekday is not None:
-            overlapping = ScheduleSlot.objects.filter(
-                weekday=weekday, is_active=True, start_time__lt=end, end_time__gt=start
-            ).exclude(pk=self.instance.pk)
-            clash = overlapping.filter(room=room).select_related("group").first()
-            if clash:
-                self.add_error("room", f"Bu xona shu vaqtda band: {clash.group.name} ({clash.start_time:%H:%M}–{clash.end_time:%H:%M}).")
-            clash = overlapping.filter(group=group).first()
-            if clash:
-                self.add_error("start_time", f"Bu guruhning shu kuni {clash.start_time:%H:%M}–{clash.end_time:%H:%M} da boshqa darsi bor.")
-            clash = overlapping.filter(group__teacher=group.teacher).exclude(group=group).select_related("group").first()
-            if clash:
-                self.add_error("group", f"O'qituvchi shu vaqtda band: {clash.group.name} ({clash.start_time:%H:%M}–{clash.end_time:%H:%M}).")
+            for field, message in slot_clashes(
+                weekday=weekday, start=start, end=end, group=group, room=room, exclude_pk=self.instance.pk
+            ):
+                self.add_error(field, message)
         return cleaned
 
     class Meta:
@@ -89,6 +100,70 @@ class ScheduleSlotForm(forms.ModelForm):
                 attrs={"class": "h-4 w-4 text-indigo-600 rounded border-slate-300"}
             ),
         }
+
+
+class ScheduleSlotCreateForm(ScheduleSlotForm):
+    """Yangi slot: bir nechta hafta kuni tanlanadi, har bir kun uchun alohida slot yaratiladi."""
+
+    weekdays = forms.TypedMultipleChoiceField(
+        choices=ScheduleSlot.WEEKDAY_CHOICES,
+        coerce=int,
+        widget=forms.CheckboxSelectMultiple,
+        label="Hafta kunlari",
+        error_messages={"required": "Kamida bitta hafta kunini tanlang."},
+    )
+
+    class Meta(ScheduleSlotForm.Meta):
+        fields = ["group", "start_time", "end_time", "room", "is_active"]
+
+    def __init__(self, *args, **kwargs):
+        data = kwargs.get("data") if "data" in kwargs else (args[0] if args else None)
+        # Eski so'rovlar (bitta "weekday") ham qabul qilinadi
+        if data is not None and not data.getlist("weekdays") and data.get("weekday") not in (None, ""):
+            data = data.copy()
+            data.setlist("weekdays", [data.get("weekday")])
+            if "data" in kwargs:
+                kwargs["data"] = data
+            else:
+                args = (data, *args[1:])
+        super().__init__(*args, **kwargs)
+
+    def clean(self):
+        cleaned = super().clean()
+        start, end = cleaned.get("start_time"), cleaned.get("end_time")
+        group, room, days = cleaned.get("group"), cleaned.get("room"), cleaned.get("weekdays") or []
+        if self.errors or not (start and end and group is not None and room is not None):
+            return cleaned
+        if cleaned.get("is_active"):
+            labels = dict(ScheduleSlot.WEEKDAY_CHOICES)
+            for day in days:
+                for field, message in slot_clashes(
+                    weekday=day, start=start, end=end, group=group, room=room, day_label=labels[day]
+                ):
+                    self.add_error(field, message)
+        return cleaned
+
+    def save(self, commit=True):
+        """Har bir tanlangan kun uchun slot (hammasi yoki hech biri). Birinchi slot qaytariladi."""
+        from django.db import transaction
+
+        days = sorted(set(self.cleaned_data["weekdays"]))
+        slots = []
+        with transaction.atomic():
+            for day in days:
+                slot = ScheduleSlot(
+                    group=self.cleaned_data["group"],
+                    weekday=day,
+                    start_time=self.cleaned_data["start_time"],
+                    end_time=self.cleaned_data["end_time"],
+                    room=self.cleaned_data["room"],
+                    is_active=self.cleaned_data["is_active"],
+                )
+                slot.save()
+                slots.append(slot)
+        self.instance = slots[0]
+        self.created_slots = slots
+        return slots[0]
 
 
 class GenerateLessonsForm(forms.Form):

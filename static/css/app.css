@@ -592,3 +592,12 @@ button.mv-cell:disabled { opacity: .5; cursor: progress; }
 /* Yuqori menyu o'rta kenglikda bir qatorda qoladi */
 .mv-link, .mv-pay-btn { white-space: nowrap; }
 @media (max-width: 1279px) { .yt-user-meta { display: none !important; } .yt-pay-text { display: none; } }
+
+/* Jadval sloti: hafta kunlari tugmachalar ko'rinishida (bir nechtasini tanlash) */
+.yt-days { display: flex; flex-wrap: wrap; gap: .4rem; }
+.yt-day { position: relative; cursor: pointer; }
+.yt-day input { position: absolute; opacity: 0; pointer-events: none; }
+.yt-day span { display: inline-block; padding: .45rem .85rem; border: 1px solid var(--mv-border); border-radius: 999px; font-size: .9rem; font-weight: 500; color: var(--mv-ink); background: #fff; transition: background .15s, color .15s, border-color .15s; }
+.yt-day:hover span { border-color: var(--mv-primary); }
+.yt-day input:checked + span { color: #fff; background: var(--mv-primary); border-color: var(--mv-primary); }
+.yt-day input:focus-visible + span { outline: 2px solid var(--mv-primary); outline-offset: 2px; }

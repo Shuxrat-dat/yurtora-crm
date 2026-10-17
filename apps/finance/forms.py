@@ -1,6 +1,8 @@
 """Finance forms."""
 
 from django import forms
+
+from apps.core.forms import MoneyField, MoneyInput
 from django.core.exceptions import ValidationError
 
 from apps.finance.models import LedgerEntry
@@ -12,14 +14,14 @@ MAX_PAYMENT_AMOUNT = 10_000_000_000
 class PaymentForm(forms.Form):
     """To'lov qabul qilish formasi."""
 
-    amount = forms.IntegerField(
+    amount = MoneyField(
         min_value=1,
         max_value=MAX_PAYMENT_AMOUNT,
         label="Summa (so'm)",
-        widget=forms.NumberInput(
+        widget=MoneyInput(
             attrs={
                 "class": "w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500",
-                "placeholder": "Masalan: 500000",
+                "placeholder": "Masalan: 500 000",
             }
         ),
     )
@@ -150,11 +152,11 @@ class ReceiptSettingsForm(forms.ModelForm):
 class RefundForm(forms.Form):
     """Pul qaytarish formasi (faqat direktor)."""
 
-    amount = forms.IntegerField(
+    amount = MoneyField(
         min_value=1,
         max_value=MAX_PAYMENT_AMOUNT,
         label="Qaytariladigan summa (so'm)",
-        widget=forms.NumberInput(attrs={"class": "w-full px-3 py-2 border border-slate-300 rounded-lg"}),
+        widget=MoneyInput(attrs={"class": "w-full px-3 py-2 border border-slate-300 rounded-lg"}),
     )
     method = forms.ChoiceField(
         choices=LedgerEntry.PaymentMethod.choices,

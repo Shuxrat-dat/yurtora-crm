@@ -22,6 +22,7 @@ from apps.schedule.forms import (
     GenerateLessonsForm,
     RescheduleLessonForm,
     RoomForm,
+    ScheduleSlotCreateForm,
     ScheduleSlotForm,
 )
 from apps.schedule.models import Lesson, Room, ScheduleSlot
@@ -456,14 +457,16 @@ class SlotListView(RoleRequiredMixin, ListView):
 
 class SlotCreateView(RoleRequiredMixin, CreateView):
     model = ScheduleSlot
-    form_class = ScheduleSlotForm
+    form_class = ScheduleSlotCreateForm
     template_name = "schedule/slot_form.html"
     allowed_roles = [User.Role.ADMINISTRATOR]
     success_url = reverse_lazy("schedule:slot_list")
 
     def form_valid(self, form):
-        messages.success(self.request, "Jadval sloti qo'shildi.")
-        return super().form_valid(form)
+        response = super().form_valid(form)
+        count = len(form.created_slots)
+        messages.success(self.request, "Jadval sloti qo'shildi." if count == 1 else f"{count} ta jadval sloti qo'shildi.")
+        return response
 
 
 class SlotUpdateView(RoleRequiredMixin, UpdateView):

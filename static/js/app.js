@@ -219,3 +219,29 @@
   document.addEventListener('click', (e) => closeAll(e.target.closest('.yt-dd')));
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAll(null); });
 })();
+
+// --- Summalar: xonalar bo'shliq bilan ajratiladi (1 500 000). Server bo'shliqli qiymatni ham qabul qiladi ---
+(() => {
+  const group = (digits) => digits.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  const format = (input) => {
+    const raw = input.value;
+    const caret = input.selectionStart ?? raw.length;
+    const digitsBefore = raw.slice(0, caret).replace(/\D/g, '').length;
+    const out = group(raw.replace(/\D/g, '').replace(/^0+(?=\d)/, ''));
+    if (out === raw) return;
+    input.value = out;
+    if (document.activeElement !== input) return;
+    // Kursor o'sha raqamdan keyin qoladi
+    let pos = 0;
+    for (let seen = 0; pos < out.length && seen < digitsBefore; pos++) if (/\d/.test(out[pos])) seen++;
+    input.setSelectionRange(pos, pos);
+  };
+  const formatAll = (root) => root.querySelectorAll('input[data-money]').forEach(format);
+  document.addEventListener('input', (e) => { if (e.target.matches?.('input[data-money]')) format(e.target); });
+  formatAll(document);
+  // To'lov oynasi va HTMX qismlari sahifaga keyin qo'shiladi
+  new MutationObserver((records) => records.forEach((r) => r.addedNodes.forEach((n) => {
+    if (n.nodeType !== 1) return;
+    if (n.matches('input[data-money]')) format(n); else formatAll(n);
+  }))).observe(document.body, { childList: true, subtree: true });
+})();

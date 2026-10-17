@@ -207,8 +207,13 @@ class StudentListView(RoleRequiredMixin, ListView):
         open_statuses = set(OPEN_ENROLLMENT_STATUSES)
         group_ids = {e.group_id for st in page_students for e in st.enrollments.all()}
         schedules = group_schedule_summaries(group_ids)
+        # O'qituvchi o'quvchining boshqa o'qituvchilardagi guruhlarini ko'rmaydi
+        only_own = self.request.user.role == User.Role.TEACHER
         for st in page_students:
-            st.open_enrollments = [e for e in st.enrollments.all() if e.status in open_statuses]
+            st.open_enrollments = [
+                e for e in st.enrollments.all()
+                if e.status in open_statuses and (not only_own or e.group.teacher.user_id == self.request.user.pk)
+            ]
             for e in st.open_enrollments:
                 e.group_balance = group_balances.get((st.pk, e.group_id), 0)
                 e.schedule = schedules.get(e.group_id, "")
@@ -267,10 +272,11 @@ class StudentDetailView(RoleRequiredMixin, DetailView):
         today = timezone.localdate()
         month_start = _parse_month(self.request.GET.get("month"), today)
         next_month = (month_start + timedelta(days=32)).replace(day=1)
-        enrollments = sorted(
-            self.object.enrollments.all(),
-            key=lambda e: (e.status == "finished", e.group.name),
-        )
+        enrollments = self.object.enrollments.all()
+        if self.request.user.role == User.Role.TEACHER:
+            # O'qituvchi kartada faqat o'z guruhlarini ko'radi
+            enrollments = [e for e in enrollments if e.group.teacher.user_id == self.request.user.pk]
+        enrollments = sorted(enrollments, key=lambda e: (e.status == "finished", e.group.name))
         schedules = group_schedule_summaries({e.group_id for e in enrollments})
         for e in enrollments:
             e.schedule = schedules.get(e.group_id, "")

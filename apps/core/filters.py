@@ -14,7 +14,7 @@ _PHONE_NOISE = re.compile(r"[\s\-()]+")
 def parse_int(value, minimum=None, maximum=None):
     """Matnni butun songa aylantiradi. Noto'g'ri yoki chegaradan tashqari qiymat: None."""
     try:
-        number = int(str(value).strip())
+        number = int(re.sub(r"\s+", "", str(value)))  # "1 500 000" ham qabul qilinadi
     except (TypeError, ValueError):
         return None
     if minimum is not None and number < minimum:
