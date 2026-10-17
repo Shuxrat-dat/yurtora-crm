@@ -740,3 +740,14 @@ a.yt-kpi:hover { border-color: color-mix(in srgb, var(--tone) 45%, #fff); }
 }
 /* Summalar bir qatorda: shrift kartalar kengligiga moslashadi */
 .yt-kpi-value[data-format="money"] { white-space: nowrap; overflow-wrap: normal; font-size: clamp(1.05rem, 2.25cqi, 1.65rem); }
+
+/* Kartalardagi o'zgarish: o'tgan oyga (darslar uchun o'tgan haftaga) nisbatan. Raqamlar yashirin bo'lsa, ular ham yashirin */
+.yt-trend { display: flex; flex-wrap: wrap; align-items: baseline; gap: .1rem .35rem; font-size: .78rem; line-height: 1.25; }
+.yt-trend i { font-style: normal; font-weight: 700; }
+.yt-trend b { font-weight: 600; white-space: nowrap; }
+.yt-trend small { flex-basis: 100%; font-size: .72rem; color: var(--mv-muted); }
+.yt-trend.is-good { color: #15803d; }
+.yt-trend.is-bad { color: var(--mv-red-dark); }
+.yt-trend.is-flat { color: var(--mv-muted); }
+.yt-kpis:not(.is-shown) .yt-trend { visibility: hidden; }
+.yt-kpi-grid--small .yt-trend small { display: none; }

@@ -22,6 +22,7 @@ from apps.core.services import (
     get_schedule_grid_data,
     get_teacher_today_lessons,
 )
+from apps.core.trends import dashboard_trends
 
 from .forms import LoginForm
 from .models import User
@@ -123,6 +124,7 @@ class HomeView(LoginRequiredMixin, TemplateView):
                 weekday=today_weekday, step_minutes=30
             )
             context["recent_students"] = recent_students()
+            context["trends"] = dashboard_trends(user)
 
         # Weekday names for tabs
         context["weekday_names"] = [
