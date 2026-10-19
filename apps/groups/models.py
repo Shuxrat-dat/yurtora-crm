@@ -123,6 +123,9 @@ class Enrollment(models.Model):
     end_date = models.DateField(
         null=True, blank=True, verbose_name="Guruhdan chiqqan sana"
     )
+    # Shaxsiy oylik narx: bo'sh bo'lsa, kursning narxi ishlatiladi (chegirma, erta yozilish, kelishuv)
+    custom_price = models.BigIntegerField(null=True, blank=True, verbose_name="Shaxsiy oylik narx (so'm)")
+    price_note = models.CharField(max_length=120, blank=True, default="", verbose_name="Narx sababi")
     paid_from = models.DateField(
         null=True, blank=True, verbose_name="To'lov boshlanish sanasi"
     )
@@ -146,6 +149,7 @@ class Enrollment(models.Model):
         verbose_name_plural = "Guruhga a'zoliklar"
         constraints = [
             models.CheckConstraint(condition=models.Q(end_date__isnull=True) | models.Q(end_date__gte=models.F("start_date")), name="enrollment_end_not_before_start"),
+            models.CheckConstraint(condition=models.Q(custom_price__isnull=True) | models.Q(custom_price__gte=0), name="enrollment_custom_price_non_negative"),
             # Bir guruhda bitta o'quvchi uchun faqat bitta tugallanmagan (trial/active/frozen) a'zolik bo'lishi mumkin
             models.UniqueConstraint(
                 fields=["student", "group"],
@@ -153,6 +157,11 @@ class Enrollment(models.Model):
                 name="unique_open_enrollment_per_group",
             ),
         ]
+
+    @property
+    def effective_price(self) -> int:
+        """Shu o'quvchi uchun amaldagi oylik narx: shaxsiy narx yoki kurs narxi."""
+        return self.custom_price if self.custom_price is not None else self.group.course.monthly_price
 
     def __str__(self):
         return f"{self.student} -> {self.group} ({self.get_status_display()})"

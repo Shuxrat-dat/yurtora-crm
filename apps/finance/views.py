@@ -513,9 +513,9 @@ class FinanceDashboardView(RoleRequiredMixin, View):
 
         monthly_plan = (
             sum(
-                e.group.course.monthly_price
+                e.effective_price
                 for e in active_enrollments
-                if e.group and e.group.course and e.group.course.monthly_price
+                if e.group and e.group.course and e.effective_price
             )
             or 0
         )

@@ -38,7 +38,12 @@ class DuplicatePayment(ValidationError):
     """Bir xil kalit bilan to'lov allaqachon qabul qilingan (formani takroriy yuborish)."""
 
 
-def lesson_charge_amount(group, lesson: Lesson) -> int:
+def _lesson_share(price: int, i: int, n: int) -> int:
+    """Narxning i-darsga to'g'ri keladigan qismi (musbat): floor(P*i/n) - floor(P*(i-1)/n)."""
+    return (price * i // n) - (price * (i - 1) // n)
+
+
+def lesson_charge_amount(group, lesson: Lesson, price: int | None = None) -> int:
     """
     Guruh va dars uchun to'lov miqdorini hisoblaydi (deterministik, toza funksiya).
 
@@ -52,7 +57,7 @@ def lesson_charge_amount(group, lesson: Lesson) -> int:
     """
     year = lesson.date.year
     month = lesson.date.month
-    monthly_price = group.course.monthly_price
+    monthly_price = group.course.monthly_price if price is None else price
 
     # O'sha oydagi barcha darslar (cancelled dan tashqari), sana bo'yicha saralangan
     month_lessons = list(
@@ -78,9 +83,7 @@ def lesson_charge_amount(group, lesson: Lesson) -> int:
         return 0
 
     # Deterministik formula
-    charge = (monthly_price * i // n) - (monthly_price * (i - 1) // n)
-
-    return -charge  # Manfiy, chunki bu to'lov hisobi (charge)
+    return -_lesson_share(monthly_price, i, n)  # Manfiy, chunki bu to'lov hisobi (charge)
 
 
 def _month_lessons(group, lesson: Lesson) -> list[Lesson]:
@@ -124,6 +127,17 @@ def _settle_amount(enrollment, lesson, month_lessons, monthly_price, base_amount
         ).aggregate(total=Sum("amount"))["total"]
         or 0
     )
+    # Shu oy uchun narx o'zgarishi tuzatishlari ham hisobga olinadi (aks holda oxirgi dars noto'g'ri hisoblanadi)
+    charged -= (
+        LedgerEntry.objects.filter(
+            enrollment=enrollment,
+            kind=LedgerEntry.Kind.ADJUSTMENT,
+            comment__startswith=PRICE_ADJUSTMENT_PREFIX,
+            period__year=lesson.date.year,
+            period__month=lesson.date.month,
+        ).aggregate(total=Sum("amount"))["total"]
+        or 0
+    )
     return -max(target - charged, 0)
 
 
@@ -154,10 +168,11 @@ def _charge_enrollments(lesson: Lesson, only_enrollment=None) -> list[LedgerEntr
     accrue_lesson_charges (held dars) va backfill_enrollment_charges (o'tgan, lekin belgilanmagan dars)
     shu yerdan foydalanadi.
     """
-    base_amount = lesson_charge_amount(lesson.group, lesson)
-
-    if base_amount == 0:
+    month_lessons = _month_lessons(lesson.group, lesson)
+    if lesson not in month_lessons:
         return []
+    lesson_index = month_lessons.index(lesson) + 1
+    course_price = lesson.group.course.monthly_price
 
     # Faol enrollmentlar: paid_from <= lesson.date
     # Va muzlatish davrida bo'lmagan (frozen_from null yoki lesson.date < frozen_from)
@@ -174,8 +189,6 @@ def _charge_enrollments(lesson: Lesson, only_enrollment=None) -> list[LedgerEntr
     if only_enrollment is not None:
         active_enrollments = active_enrollments.filter(pk=only_enrollment.pk)
 
-    month_lessons = _month_lessons(lesson.group, lesson)
-    monthly_price = lesson.group.course.monthly_price
     created_entries = []
 
     with transaction.atomic():
@@ -184,6 +197,10 @@ def _charge_enrollments(lesson: Lesson, only_enrollment=None) -> list[LedgerEntr
                 enrollment=enrollment, lesson=lesson, kind=LedgerEntry.Kind.CHARGE
             ).exists():
                 continue  # allaqachon hisoblangan
+            monthly_price = enrollment.custom_price if enrollment.custom_price is not None else course_price
+            base_amount = -_lesson_share(monthly_price, lesson_index, len(month_lessons))
+            if base_amount == 0:
+                continue
             amount = _settle_amount(enrollment, lesson, month_lessons, monthly_price, base_amount)
             if amount == 0:
                 continue
@@ -949,8 +966,8 @@ PERIOD_FUTURE_MONTHS = 12
 
 
 def entry_month(kind, entry_date, period, reversed_date=None) -> date:
-    """Yozuv qaysi oyga tegishli: to'lov - belgilangan oy; uzrli qaytarish - qaytarilgan dars oyi; qolganlari - o'z sanasi."""
-    if kind == LedgerEntry.Kind.PAYMENT:
+    """Yozuv qaysi oyga tegishli: to'lov va tuzatish - belgilangan oy; uzrli qaytarish - qaytarilgan dars oyi; qolganlari - o'z sanasi."""
+    if kind == LedgerEntry.Kind.PAYMENT or (kind == LedgerEntry.Kind.ADJUSTMENT and period):
         return month_start(period or entry_date)
     if kind == LedgerEntry.Kind.EXCUSED_CREDIT and reversed_date:
         return month_start(reversed_date)
@@ -1003,3 +1020,85 @@ def debt_months_map(pairs) -> dict:
             {"label": r["label"], "value": r["value"], "amount": -r["balance"]} for r in _month_rows(entries) if r["balance"] < 0
         ]
     return result
+
+
+# ---------- Shaxsiy narx ----------
+PRICE_ADJUSTMENT_PREFIX = "Narx o'zgarishi:"
+MAX_CUSTOM_PRICE = 1_000_000_000
+
+
+def set_enrollment_price(enrollment, price, user, note: str = "", today: date | None = None) -> int:
+    """
+    O'quvchining guruhdagi shaxsiy oylik narxini o'rnatadi (price=None: kurs narxiga qaytarish).
+
+    Kelgusi darslar yangi narx bilan hisoblanadi. Allaqachon hisoblangan oylar yangi narxga to'g'rilanadi:
+    har bir oy uchun (hisoblangan darslar soni bo'yicha) farq "tuzatish" yozuvi sifatida shu oyga yoziladi;
+    qayta chaqirish ikkinchi yozuv yaratmaydi. Qaytaradi: yaratilgan tuzatishlar soni.
+    Huquq: administrator va direktor.
+    """
+    from apps.groups.models import EnrollmentLog
+
+    if user is not None and not user_has_role(user, [User.Role.ADMINISTRATOR]):
+        raise PermissionDenied("Narxni faqat administrator yoki direktor o'zgartira oladi.")
+    if price is not None and not 0 <= price <= MAX_CUSTOM_PRICE:
+        raise ValidationError("Narx noto'g'ri: 0 dan 1 000 000 000 gacha bo'lishi kerak.")
+    from django.utils import timezone
+
+    today = today or timezone.localdate()
+    old_price = enrollment.effective_price
+    new_price = price if price is not None else enrollment.group.course.monthly_price
+    note = (note or "").strip()[:120]
+
+    created = 0
+    with transaction.atomic():
+        enrollment.custom_price = price
+        enrollment.price_note = note if price is not None else ""
+        enrollment.save(update_fields=["custom_price", "price_note", "updated_at"])
+        EnrollmentLog.objects.create(
+            enrollment=enrollment,
+            action="price",
+            old_status=enrollment.status,
+            new_status=enrollment.status,
+            changed_by=user,
+            note=f"Narx: {old_price:,} -> {new_price:,} so'm".replace(",", " ") + (f" ({note})" if note and price is not None else ""),
+        )
+
+        charges = list(
+            LedgerEntry.objects.filter(enrollment=enrollment, kind=LedgerEntry.Kind.CHARGE).values_list("entry_date", "amount", "lesson_id")
+        )
+        by_month: dict[date, list] = defaultdict(list)
+        for entry_date, amount, lesson_id in charges:
+            by_month[month_start(entry_date)].append((amount, lesson_id))
+        existing_adjustments = defaultdict(int)
+        for period_value, amount in LedgerEntry.objects.filter(
+            enrollment=enrollment, kind=LedgerEntry.Kind.ADJUSTMENT, comment__startswith=PRICE_ADJUSTMENT_PREFIX
+        ).values_list("period", "amount"):
+            if period_value:
+                existing_adjustments[month_start(period_value)] += amount
+
+        for month, items in sorted(by_month.items()):
+            lessons = list(
+                Lesson.objects.filter(group=enrollment.group, date__year=month.year, date__month=month.month)
+                .exclude(status=Lesson.Status.CANCELLED)
+                .order_by("date", "start_time")
+            )
+            index = {lesson.pk: i for i, lesson in enumerate(lessons, start=1)}
+            n = len(lessons)
+            should_pay = sum(_lesson_share(new_price, index[lid], n) for _, lid in items if lid in index)
+            current = sum(amount for amount, _ in items) + existing_adjustments[month]
+            diff = -should_pay - current
+            if diff == 0:
+                continue
+            LedgerEntry.objects.create(
+                student=enrollment.student,
+                group=enrollment.group,
+                enrollment=enrollment,
+                kind=LedgerEntry.Kind.ADJUSTMENT,
+                amount=diff,
+                entry_date=today,
+                period=month,
+                comment=f"{PRICE_ADJUSTMENT_PREFIX} {old_price:,} -> {new_price:,} so'm ({month_label(month)})".replace(",", " "),
+                created_by=user,
+            )
+            created += 1
+    return created

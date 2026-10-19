@@ -18,6 +18,8 @@ def enroll_student(
     status: str = Enrollment.Status.ACTIVE,
     user=None,
     paid_from: date | None = None,
+    custom_price: int | None = None,
+    price_note: str = "",
 ) -> Enrollment:
     """
     O'quvchini guruhga a'zo (faol yoki sinov darsi) sifatida qo'shish xizmati.
@@ -31,6 +33,9 @@ def enroll_student(
     """
     if start_date is None:
         start_date = timezone.localdate()
+
+    if custom_price is not None and not 0 <= custom_price <= 1_000_000_000:
+        raise ValidationError("Narx noto'g'ri: 0 dan 1 000 000 000 gacha bo'lishi kerak.")
 
     if status not in [Enrollment.Status.ACTIVE, Enrollment.Status.TRIAL]:
         raise ValidationError("Noto'g'ri a'zolik statusi tanlandi.")
@@ -84,6 +89,8 @@ def enroll_student(
             start_date=start_date,
             status=status,
             paid_from=paid_from,
+            custom_price=custom_price,
+            price_note=(price_note or "").strip()[:120] if custom_price is not None else "",
         )
 
         EnrollmentLog.objects.create(
@@ -92,7 +99,7 @@ def enroll_student(
             old_status=None,
             new_status=status,
             changed_by=user,
-            note="Guruhga qo'shildi",
+            note="Guruhga qo'shildi" + (f" (shaxsiy narx: {custom_price:,} so'm)".replace(",", " ") if custom_price is not None else ""),
         )
 
         # O'tmish sanadan yozilgan bo'lsa, allaqachon o'tilgan darslar ham hisoblanadi

@@ -4,6 +4,7 @@ from django import forms
 
 from apps.accounts.models import User
 from apps.accounts.permissions import user_has_role
+from apps.core.forms import MoneyField, MoneyInput
 from apps.groups.models import Enrollment, Group
 from apps.students.models import Student
 
@@ -96,6 +97,24 @@ class GroupForm(forms.ModelForm):
         }
 
 
+class EnrollmentPriceForm(forms.Form):
+    """Shaxsiy narxni o'rnatish yoki kurs narxiga qaytarish (bo'sh qoldirilsa)."""
+
+    price = MoneyField(
+        required=False,
+        min_value=0,
+        max_value=1_000_000_000,
+        label="Shaxsiy oylik narx (so'm)",
+        widget=MoneyInput(attrs={"class": "w-full px-3 py-2 border border-slate-300 rounded-lg", "placeholder": "Bo'sh: kurs narxi"}),
+    )
+    note = forms.CharField(
+        required=False,
+        max_length=120,
+        label="Sababi",
+        widget=forms.TextInput(attrs={"class": "w-full px-3 py-2 border border-slate-300 rounded-lg", "placeholder": "Masalan: kursning boshida yozilgan"}),
+    )
+
+
 class EnrollStudentForm(forms.Form):
     """Guruhga o'quvchini qo'shish formasi."""
 
@@ -121,6 +140,14 @@ class EnrollStudentForm(forms.Form):
             }
         ),
     )
+    custom_price = MoneyField(
+        required=False,
+        min_value=0,
+        max_value=1_000_000_000,
+        label="Shaxsiy narx (ixtiyoriy)",
+        widget=MoneyInput(attrs={"class": "w-full px-3 py-2 border border-slate-300 rounded-lg", "placeholder": "Bo'sh: kurs narxi"}),
+    )
+    price_note = forms.CharField(required=False, max_length=120, widget=forms.HiddenInput())
     start_date = forms.DateField(
         required=False,
         label="Boshlanish sanasi",

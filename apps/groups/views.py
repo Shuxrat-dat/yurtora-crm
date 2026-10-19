@@ -5,7 +5,7 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.db.models import Q, Sum
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views import View
@@ -19,7 +19,12 @@ from apps.core.http import safe_next_url
 from apps.core.pagination import QuerystringMixin
 from apps.finance.models import LedgerEntry
 from apps.groups import grid, services
-from apps.groups.forms import EnrollStudentForm, GroupForm, TransferStudentForm
+from apps.groups.forms import (
+    EnrollmentPriceForm,
+    EnrollStudentForm,
+    GroupForm,
+    TransferStudentForm,
+)
 from apps.groups.models import Enrollment, Group
 from apps.schedule.models import Lesson
 from apps.students.models import Student
@@ -256,6 +261,7 @@ class GroupEnrollView(RoleRequiredMixin, View):
                     start_date=start_date,
                     status=status,
                     user=request.user,
+                    custom_price=form.cleaned_data.get("custom_price"),
                 )
                 messages.success(
                     request,
@@ -465,3 +471,44 @@ class GroupTransferView(RoleRequiredMixin, View):
             except ValidationError as exc:
                 form.add_error(None, "; ".join(exc.messages))
         return render(request, self.template_name, self._context(request, group, student, form))
+
+
+
+class EnrollmentPriceView(RoleRequiredMixin, View):
+    """O'quvchining guruhdagi shaxsiy narxini ko'rish va o'zgartirish (administrator va direktor)."""
+
+    allowed_roles = [User.Role.ADMINISTRATOR]
+    template_name = "groups/enrollment_price.html"
+
+    def _enrollment(self, pk):
+        return get_object_or_404(
+            Enrollment.objects.select_related("student", "group__course"),
+            pk=pk,
+            status__in=[Enrollment.Status.ACTIVE, Enrollment.Status.TRIAL, Enrollment.Status.FROZEN],
+        )
+
+    def get(self, request, pk):
+        enrollment = self._enrollment(pk)
+        form = EnrollmentPriceForm(initial={"price": enrollment.custom_price, "note": enrollment.price_note})
+        return render(request, self.template_name, {"enrollment": enrollment, "form": form})
+
+    def post(self, request, pk):
+        from apps.finance import services as finance_services
+
+        enrollment = self._enrollment(pk)
+        form = EnrollmentPriceForm(request.POST)
+        if form.is_valid():
+            try:
+                fixes = finance_services.set_enrollment_price(
+                    enrollment, form.cleaned_data["price"], request.user, form.cleaned_data["note"]
+                )
+            except (ValidationError, PermissionDenied) as exc:
+                messages.error(request, getattr(exc, "message", str(exc)))
+            else:
+                price = form.cleaned_data["price"]
+                text = "Kurs narxiga qaytarildi." if price is None else f"Shaxsiy narx o'rnatildi: {price:,} so'm.".replace(",", " ")
+                if fixes:
+                    text += f" Hisoblangan {fixes} oy yangi narxga to'g'rilandi."
+                messages.success(request, text)
+                return redirect(request.POST.get("next") or reverse("groups:group_detail", args=[enrollment.group_id]))
+        return render(request, self.template_name, {"enrollment": enrollment, "form": form})

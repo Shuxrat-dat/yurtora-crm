@@ -10,6 +10,7 @@ urlpatterns = [
     path("", views.GroupListView.as_view(), name="group_list"),
     path("create/", views.GroupCreateView.as_view(), name="group_create"),
     path("<int:pk>/", views.GroupDetailView.as_view(), name="group_detail"),
+    path("enrollments/<int:pk>/price/", views.EnrollmentPriceView.as_view(), name="enrollment_price"),
     path("<int:pk>/edit/", views.GroupUpdateView.as_view(), name="group_edit"),
     path("<int:pk>/attendance/", views.GroupAttendanceView.as_view(), name="group_attendance"),
     path("<int:pk>/enroll/", views.GroupEnrollView.as_view(), name="group_enroll"),

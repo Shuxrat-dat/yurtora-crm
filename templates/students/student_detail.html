@@ -173,6 +173,7 @@
                             <div>
                                 <a href="{% url 'groups:group_detail' item.enrollment.group.pk %}" class="font-semibold text-slate-900">{{ item.enrollment.group.name }}</a>
                                 <span class="text-xs text-slate-500 block">{{ item.enrollment.group.course.name }}</span>
+                                <span class="text-xs block {% if item.enrollment.custom_price is not None %}text-amber-700 font-semibold{% else %}text-slate-500{% endif %}">Narx: {{ item.enrollment.effective_price|som }} so'm{% if item.enrollment.custom_price is not None %} (shaxsiy){% endif %}{% if item.enrollment.status != 'finished' and can_manage_student %} · <a href="{% url 'groups:enrollment_price' item.enrollment.pk %}" class="text-indigo-600">o'zgartirish</a>{% endif %}</span>
                             </div>
                             <span class="text-right">
                                 <span class="font-semibold {% if item.balance < 0 %}text-red-700{% elif item.balance > 0 %}text-emerald-700{% else %}text-slate-500{% endif %}">{{ item.balance|som }} so'm</span>
