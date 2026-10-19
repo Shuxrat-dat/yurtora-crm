@@ -86,6 +86,8 @@ class LedgerEntry(models.Model):
         help_text="Faqat payment turi uchun",
     )
     entry_date = models.DateField(verbose_name="Yozuv sanasi")
+    # To'lov qaysi oy uchun (oyning 1-sanasi). Bo'sh bo'lsa, to'lov sanasining oyi hisoblanadi
+    period = models.DateField(null=True, blank=True, db_index=True, verbose_name="Qaysi oy uchun")
     comment = models.TextField(blank=True, default="", verbose_name="Izoh")
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,

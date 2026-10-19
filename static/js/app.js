@@ -282,3 +282,17 @@
     try { localStorage.setItem('yt-mode', dark ? 'dark' : 'light'); } catch (err) {}
   });
 })();
+
+// --- To'lov oynasi: guruh o'zgarsa, "qaysi oy uchun" eng eski qarz oyiga o'rnatiladi va qarzlar ko'rsatiladi ---
+document.addEventListener('change', (e) => {
+  const group = e.target.closest && e.target.closest('select[name="group_id"]');
+  const form = group && group.closest('.mv-pay-form');
+  if (!form) return;
+  const option = group.selectedOptions[0];
+  const period = form.querySelector('[data-pay-period]');
+  const hint = form.querySelector('[data-pay-hint]');
+  if (period && option && option.dataset.debtFirst && [...period.options].some((o) => o.value === option.dataset.debtFirst)) {
+    period.value = option.dataset.debtFirst;
+  }
+  if (hint) hint.textContent = option && option.dataset.debtHint ? 'Qarz oylari: ' + option.dataset.debtHint : '';
+});

@@ -12,6 +12,7 @@ from django.db.models import Sum
 from apps.accounts.models import User
 from apps.accounts.permissions import user_has_role
 from apps.core.filters import person_search_q
+from apps.core.months import add_months, month_label, month_start, month_value
 from apps.finance.models import LedgerEntry
 from apps.groups.models import Enrollment
 from apps.schedule.models import Lesson
@@ -267,9 +268,12 @@ def register_payment(
     entry_date: date,
     comment: str = "",
     idempotency_key: str | None = None,
+    period: date | None = None,
 ) -> LedgerEntry:
     """
     To'lovni ro'yxatga oladi.
+
+    period: to'lov qaysi oy uchun (bo'sh bo'lsa, to'lov sanasining oyi). Juda uzoq oy qabul qilinmaydi.
 
     idempotency_key: formadan keladigan bir martalik kalit. Shu kalit bilan to'lov allaqachon bo'lsa,
     DuplicatePayment ko'tariladi va ikkinchi yozuv yaratilmaydi (qo'sh bosish, sahifani qayta yuborish).
@@ -288,6 +292,10 @@ def register_payment(
 
     if method not in dict(LedgerEntry.PaymentMethod.choices):
         raise ValidationError(f"Noto'g'ri to'lov usuli: {method}")
+
+    period = month_start(period or entry_date)
+    if not add_months(month_start(entry_date), -PERIOD_PAST_MONTHS) <= period <= add_months(month_start(entry_date), PERIOD_FUTURE_MONTHS):
+        raise ValidationError("To'lov oyi to'lov sanasidan juda uzoq: oyni tekshiring.")
 
     # Проверка: entry_date не в закрытом месяце
     from apps.finance.models import PayrollMonth
@@ -322,6 +330,7 @@ def register_payment(
                 amount=amount,
                 method=method,
                 entry_date=entry_date,
+                period=period,
                 comment=comment,
                 created_by=user,
                 idempotency_key=key,
@@ -931,3 +940,66 @@ def generate_receipt_qr_svg(content: str) -> str:
     except (ValueError, OSError):
         logger.warning("QR kodni yaratib bo'lmadi (manzil juda uzun?)", exc_info=True)
         return ""
+
+
+
+# ---------- Oylar bo'yicha hisob: to'lov qaysi oy uchun, qarz qaysi oyda ----------
+PERIOD_PAST_MONTHS = 24
+PERIOD_FUTURE_MONTHS = 12
+
+
+def entry_month(kind, entry_date, period, reversed_date=None) -> date:
+    """Yozuv qaysi oyga tegishli: to'lov - belgilangan oy; uzrli qaytarish - qaytarilgan dars oyi; qolganlari - o'z sanasi."""
+    if kind == LedgerEntry.Kind.PAYMENT:
+        return month_start(period or entry_date)
+    if kind == LedgerEntry.Kind.EXCUSED_CREDIT and reversed_date:
+        return month_start(reversed_date)
+    return month_start(entry_date)
+
+
+def _month_rows(entries):
+    months: dict[date, dict] = {}
+    for kind, amount, entry_date, period, reversed_date in entries:
+        month = entry_month(kind, entry_date, period, reversed_date)
+        row = months.setdefault(month, {"month": month, "charged": 0, "paid": 0, "other": 0, "balance": 0})
+        if kind == LedgerEntry.Kind.CHARGE:
+            row["charged"] += -amount
+        elif kind == LedgerEntry.Kind.PAYMENT:
+            row["paid"] += amount
+        else:
+            row["other"] += amount  # uzrli qaytarish, tuzatish, pul qaytarish
+        row["balance"] += amount
+    rows = sorted(months.values(), key=lambda r: r["month"])
+    for row in rows:
+        row["label"] = month_label(row["month"])
+        row["value"] = month_value(row["month"])
+    return rows
+
+
+def monthly_breakdown(student, group) -> list[dict]:
+    """O'quvchining guruh bo'yicha oylik hisobi: hisoblandi, to'landi, oy balansi (qarz < 0). Oy balanslari yig'indisi = umumiy balans."""
+    rows = LedgerEntry.objects.filter(student=student, group=group).values_list(
+        "kind", "amount", "entry_date", "period", "reverses__entry_date"
+    )
+    return _month_rows(rows)
+
+
+def debt_months_map(pairs) -> dict:
+    """[(student_id, group_id), ...] uchun qarzdor oylar: {(student_id, group_id): [{label, value, amount}, ...]} (bitta so'rov)."""
+    pairs = list(pairs)
+    if not pairs:
+        return {}
+    wanted = set(pairs)
+    grouped: dict = defaultdict(list)
+    qs = LedgerEntry.objects.filter(
+        student_id__in={s for s, _ in pairs}, group_id__in={g for _, g in pairs}
+    ).values_list("student_id", "group_id", "kind", "amount", "entry_date", "period", "reverses__entry_date")
+    for student_id, group_id, *rest in qs:
+        if (student_id, group_id) in wanted:
+            grouped[(student_id, group_id)].append(tuple(rest))
+    result = {}
+    for key, entries in grouped.items():
+        result[key] = [
+            {"label": r["label"], "value": r["value"], "amount": -r["balance"]} for r in _month_rows(entries) if r["balance"] < 0
+        ]
+    return result

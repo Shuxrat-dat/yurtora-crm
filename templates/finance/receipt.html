@@ -166,6 +166,7 @@
             <div class="rc-row"><span class="rc-label">To'lov turi</span><span class="rc-value">{{ entry.get_method_display }}</span></div>
             {% endif %}
             {% if settings.show_payment_date %}
+            {% if entry.period %}<div class="rc-row"><span class="rc-label">Qaysi oy uchun</span><span class="rc-value rc-nowrap">{{ entry.period|month_uz }}</span></div>{% endif %}
             <div class="rc-row"><span class="rc-label">To'lov sanasi</span><span class="rc-value rc-nowrap">{{ entry.entry_date|date:"d.m.Y" }}</span></div>
             {% endif %}
             {% if settings.show_cashier %}

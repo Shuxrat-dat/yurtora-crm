@@ -10,9 +10,16 @@
     <label>Guruh
         <select name="group_id" required>
             {% for item in items %}
-            <option value="{{ item.group.pk }}">{{ item.group.name }} ({{ item.status }}) — balans: {{ item.balance|som }} so'm</option>
+            <option value="{{ item.group.pk }}" data-debt-first="{% if item.debt_months %}{{ item.debt_months.0.value }}{% endif %}" data-debt-hint="{% for m in item.debt_months %}{{ m.label }}: {{ m.amount|som }} so'm{% if not forloop.last %}; {% endif %}{% endfor %}">{{ item.group.name }} ({{ item.status }}) — balans: {{ item.balance|som }} so'm</option>
             {% endfor %}
         </select>
+    </label>
+
+    <label>Qaysi oy uchun
+        <select name="period" data-pay-period>
+            {% for o in period_options %}<option value="{{ o.value }}"{% if o.value == default_period %} selected{% endif %}>{{ o.label }}</option>{% endfor %}
+        </select>
+        <small class="mv-pay-hint" data-pay-hint>{% with first=items.0 %}{% if first.debt_months %}Qarz oylari: {% for m in first.debt_months %}{{ m.label }}: {{ m.amount|som }} so'm{% if not forloop.last %}; {% endif %}{% endfor %}{% endif %}{% endwith %}</small>
     </label>
 
     <label>Summa (so'm)

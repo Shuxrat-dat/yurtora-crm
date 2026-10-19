@@ -54,3 +54,14 @@ def tone(value):
 def idem_key():
     """Formaga bir martalik kalit: ikki marta yuborilgan to'lov ikkinchi marta saqlanmaydi."""
     return uuid.uuid4().hex
+
+
+@register.filter
+def month_uz(value):
+    """date -> "Oktabr 2026"."""
+    from apps.core.months import month_label
+
+    try:
+        return month_label(value)
+    except (AttributeError, IndexError, TypeError):
+        return ""

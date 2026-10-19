@@ -59,6 +59,7 @@
                         <th class="px-4 py-3">O'quvchi</th>
                         <th class="px-4 py-3">Guruh</th>
                         <th class="px-4 py-3">Qarz</th>
+                        <th class="px-4 py-3">Qaysi oylar</th>
                         <th class="px-4 py-3">Telefon</th>
                         <th class="px-4 py-3">Ota-ona tel</th>
                         <th class="px-4 py-3 text-right">Amallar</th>
@@ -80,6 +81,9 @@
                         <td class="px-4 py-3">
                             <span class="font-bold text-red-600">{{ d.balance|som }} so'm</span>
                         </td>
+                        <td class="px-4 py-3">
+                            <div class="yt-debt-chips">{% for m in d.months %}<span class="yt-debt-chip" title="{{ m.label }}">{{ m.label }}: {{ m.amount|som }}</span>{% empty %}<span class="text-slate-400">—</span>{% endfor %}</div>
+                        </td>
                         <td class="px-4 py-3 text-slate-600">{{ d.student.phone }}</td>
                         <td class="px-4 py-3 text-slate-600">
                             {% with d.student.student_guardians.all|first as sg %}
@@ -95,7 +99,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="6" class="px-4 py-8 text-center text-slate-400">
+                        <td colspan="7" class="px-4 py-8 text-center text-slate-400">
                             Qarzdorlar topilmadi
                         </td>
                     </tr>

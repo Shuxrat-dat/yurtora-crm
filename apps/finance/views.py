@@ -46,6 +46,28 @@ def _idempotency_key(request):
     return request.POST.get("idempotency_key", "").strip()[:64] or None
 
 
+
+def period_choices(today, debt_values=(), first_group_debts=()):
+    """To'lov oyini tanlash ro'yxati: eng eski qarz oyidan (yoki 3 oy oldindan) 2 oy keyingacha. Standart: birinchi guruhdagi eng eski qarz oyi, bo'lmasa joriy oy."""
+    from apps.core.months import (
+        add_months,
+        month_label,
+        month_start,
+        month_value,
+        parse_month,
+    )
+
+    current = month_start(today)
+    start = min([add_months(current, -3), *[parse_month(v) for v in debt_values]])
+    start = max(start, add_months(current, -24))
+    options, month = [], start
+    while month <= add_months(current, 2):
+        options.append({"value": month_value(month), "label": month_label(month)})
+        month = add_months(month, 1)
+    default = first_group_debts[0]["value"] if first_group_debts else month_value(current)
+    return options, default
+
+
 OPEN_ENROLLMENT_STATUSES = [
     Enrollment.Status.ACTIVE,
     Enrollment.Status.TRIAL,
@@ -75,6 +97,7 @@ class PaymentCreateView(RoleRequiredMixin, View):
                     amount=form.cleaned_data["amount"],
                     method=form.cleaned_data["method"],
                     entry_date=form.cleaned_data["entry_date"],
+                    period=form.cleaned_data.get("period"),
                     comment=form.cleaned_data.get("comment", ""),
                     user=request.user,
                     idempotency_key=_idempotency_key(request),
@@ -146,6 +169,11 @@ class DebtorsListView(RoleRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        page_rows = list(context["debtors"])
+        months = services.debt_months_map((d["student"].pk, d["group"].pk) for d in page_rows)
+        for row in page_rows:
+            row["months"] = months.get((row["student"].pk, row["group"].pk), [])
+        context["debtors"] = page_rows
         group_id = parse_int(self.request.GET.get("group"))
         params = self.request.GET.copy()
         params.pop("page", None)  # sahifa havolalarida "page" ikki marta takrorlanmasligi uchun
@@ -917,6 +945,7 @@ class QuickPaymentView(RoleRequiredMixin, View):
                     amount=form.cleaned_data["amount"],
                     method=form.cleaned_data["method"],
                     entry_date=form.cleaned_data["entry_date"],
+                    period=form.cleaned_data.get("period"),
                     comment=form.cleaned_data.get("comment", "").strip(),
                     user=request.user,
                     idempotency_key=_idempotency_key(request),
@@ -1061,22 +1090,30 @@ class PaymentModalFormView(RoleRequiredMixin, View):
             .select_related("group")
             .order_by("group__name")
         )
+        debts = services.debt_months_map((student.pk, e.group_id) for e in enrollments)
         items = [
             {
                 "group": enrollment.group,
                 "status": enrollment.get_status_display(),
                 "balance": services.get_balance(student, enrollment.group),
+                "debt_months": debts.get((student.pk, enrollment.group_id), []),
             }
             for enrollment in enrollments
         ]
+        today = timezone.localdate()
+        period_options, default_period = period_choices(
+            today, [m["value"] for it in items for m in it["debt_months"]], items[0]["debt_months"] if items else []
+        )
         # Qaysi sahifada turgan bo'lsa, shu sahifaga qaytamiz (faqat yo'l)
         next_url = urlparse(request.headers.get("HX-Current-URL", "")).path
         context = {
             "student": student,
             "items": items,
             "methods": LedgerEntry.PaymentMethod.choices,
-            "today": timezone.localdate(),
+            "today": today,
             "next_url": next_url,
+            "period_options": period_options,
+            "default_period": default_period,
         }
         return render(request, self.template_name, context)
 
@@ -1120,6 +1157,7 @@ class PaymentModalCreateView(RoleRequiredMixin, View):
                     amount=form.cleaned_data["amount"],
                     method=form.cleaned_data["method"],
                     entry_date=form.cleaned_data["entry_date"],
+                    period=form.cleaned_data.get("period"),
                     comment=form.cleaned_data.get("comment", ""),
                     user=request.user,
                     idempotency_key=_idempotency_key(request),

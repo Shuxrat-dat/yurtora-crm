@@ -53,6 +53,18 @@ class PaymentForm(forms.Form):
             }
         ),
     )
+    period = forms.CharField(required=False, label="Qaysi oy uchun", max_length=7)  # "2026-10"; bo'sh: to'lov sanasining oyi
+
+    def clean_period(self):
+        value = self.cleaned_data.get("period", "").strip()
+        if not value:
+            return None
+        from apps.core.months import parse_month
+
+        try:
+            return parse_month(value)
+        except (ValueError, TypeError):
+            raise ValidationError("Oy noto'g'ri tanlangan.") from None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

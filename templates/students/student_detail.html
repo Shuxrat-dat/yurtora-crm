@@ -184,6 +184,28 @@
                 </div>
                 {% endif %}
 
+                {% for item in enrollments_with_balance %}{% if item.months %}
+                <div>
+                    <h3 class="text-base font-bold mb-2">Oylar bo'yicha: {{ item.enrollment.group.name }}</h3>
+                    <div class="overflow-x-auto">
+                        <table class="yt-months">
+                            <thead><tr><th>Oy</th><th>Hisoblandi</th><th>To'landi</th><th>Boshqa</th><th>Oy balansi</th></tr></thead>
+                            <tbody>
+                                {% for m in item.months %}
+                                <tr>
+                                    <td>{{ m.label }}</td>
+                                    <td>{{ m.charged|som }}</td>
+                                    <td>{{ m.paid|som }}</td>
+                                    <td>{% if m.other %}{{ m.other|som }}{% else %}—{% endif %}</td>
+                                    <td class="{% if m.balance < 0 %}is-debt{% elif m.balance > 0 %}is-ok{% endif %}">{{ m.balance|som }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}{% endfor %}
+
                 {% if payment_form and enrollments_with_balance %}
                 <div class="p-4 bg-slate-50 border border-slate-200 rounded-lg">
                     <h3 class="text-base font-bold mb-3">To'lov qabul qilish</h3>
@@ -201,6 +223,9 @@
                             <div><label class="block text-xs font-semibold text-slate-600 mb-1">Summa</label>{{ payment_form.amount }}</div>
                             <div><label class="block text-xs font-semibold text-slate-600 mb-1">To'lov usuli</label>{{ payment_form.method }}</div>
                             <div><label class="block text-xs font-semibold text-slate-600 mb-1">Sana</label>{{ payment_form.entry_date }}</div>
+                            <div><label class="block text-xs font-semibold text-slate-600 mb-1">Qaysi oy uchun</label>
+                                <select name="period" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm">{% for o in period_options %}<option value="{{ o.value }}"{% if o.value == default_period %} selected{% endif %}>{{ o.label }}</option>{% endfor %}</select>
+                            </div>
                         </div>
                         <div><label class="block text-xs font-semibold text-slate-600 mb-1">Izoh</label>{{ payment_form.comment }}</div>
                         <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg">To'lovni saqlash</button>

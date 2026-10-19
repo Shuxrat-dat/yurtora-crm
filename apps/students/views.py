@@ -311,12 +311,15 @@ class StudentDetailView(RoleRequiredMixin, DetailView):
 
         # Balans har bir guruh bo'yicha
         enrollments_with_balance = []
+        from apps.finance.services import monthly_breakdown
+
         for enrollment in self.object.enrollments.select_related("group__course"):
             balance = get_balance(self.object, enrollment.group)
             enrollments_with_balance.append(
                 {
                     "enrollment": enrollment,
                     "balance": balance,
+                    "months": monthly_breakdown(self.object, enrollment.group),
                 }
             )
         context["enrollments_with_balance"] = enrollments_with_balance
@@ -345,6 +348,17 @@ class StudentDetailView(RoleRequiredMixin, DetailView):
 
         # To'lov formasi
         context["payment_form"] = PaymentForm()
+        from apps.core.months import add_months, month_label, month_start, month_value
+
+        current = month_start(today)
+        first_debt = next((m["month"] for it in enrollments_with_balance for m in it["months"] if m["balance"] < 0), None)
+        start = min(add_months(current, -3), first_debt) if first_debt else add_months(current, -3)
+        options, cursor = [], max(start, add_months(current, -24))
+        while cursor <= add_months(current, 2):
+            options.append({"value": month_value(cursor), "label": month_label(cursor)})
+            cursor = add_months(cursor, 1)
+        context["period_options"] = options
+        context["default_period"] = month_value(first_debt or current)
 
 
         return context
