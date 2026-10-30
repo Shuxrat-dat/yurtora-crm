@@ -111,7 +111,7 @@ def test_modal_saves_selected_month_and_receipt_shows_it(client, world):
     entry = LedgerEntry.objects.get(kind="payment")
     assert entry.period == SEP
     receipt = client.get(reverse("finance:receipt", args=[entry.pk])).content.decode()
-    assert "Qaysi oy uchun" in receipt and "Sentabr 2026" in receipt
+    assert "Oy uchun" in receipt and "Sentabr 2026" in receipt
 
 
 def test_invalid_period_is_rejected_not_saved(client, world):

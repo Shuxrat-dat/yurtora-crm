@@ -159,7 +159,7 @@ def test_payment_receipt_view_renders_with_settings(client, director_user, recei
     response = client.get(url)
     assert response.status_code == 200
     content = response.content.decode("utf-8")
-    assert "TO'LOV KVITANSIYASI" in content
+    assert "TO'LOV CHEKI" in content
     assert "Doe John" in content
     assert "Avazbek ustoz" in content
     assert "+998901112233" in content
@@ -178,3 +178,17 @@ def test_payment_receipt_view_renders_with_settings(client, director_user, recei
     content = response.content.decode("utf-8")
     assert "+998901112233" not in content
     assert "Rahmat, kutib qolamiz!" in content
+
+
+def test_receipt_is_58mm_with_short_labels(client, director_user, receipt_world):
+    """Chek 58 mm lenta uchun: sahifa o'lchami, qisqa yorliqlar, uzun qiymatlar yorliq ostida."""
+    client.force_login(director_user)
+    html = client.get(reverse("finance:receipt", kwargs={"entry_id": receipt_world["entry"].pk})).content.decode("utf-8")
+    assert "size: 58mm auto" in html and "80 mm" not in html
+    assert "TO'LOV CHEKI" in html and "KVITANSIYASI" not in html
+    for label in ("Chek №", "O'quvchi", "Guruh", "Turi", "Sana"):
+        assert f'rc-label">{label}<' in html, label
+    assert 'rc-total-label">To\'lov miqdori<' in html
+    # Ism va guruh uzun bo'lishi mumkin: yorliq tepada, qiymat pastda
+    assert 'rc-row rc-row--stack"><span class="rc-label">O\'quvchi' in html
+    assert 'rc-row rc-row--stack"><span class="rc-label">Guruh' in html

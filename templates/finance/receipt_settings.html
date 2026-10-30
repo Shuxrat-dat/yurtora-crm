@@ -330,7 +330,7 @@
                 <h2 class="text-base font-bold text-slate-900 mb-4">Ko'rinishi</h2>
 
                 <!-- Preview Chek qog'ozi -->
-                <div class="receipt-paper max-w-sm mx-auto p-6 sm:p-7 text-slate-800">
+                <div class="receipt-paper mx-auto p-4 sm:p-5 text-slate-800" style="max-width:17rem">
 
                     <!-- Yuqoridagi Logotip -->
                     <div id="pv-logo-top" class="text-center mb-3">
@@ -343,7 +343,7 @@
 
                     <!-- Chek yuqori qismi (Sarlavha, Manzil, Telefon) -->
                     <div id="pv-header" class="text-center mb-4">
-                        <div class="font-extrabold text-lg text-[#0d2167] tracking-wider uppercase mb-1">TO'LOV KVITANSIYASI</div>
+                        <div class="font-extrabold text-lg text-[#0d2167] tracking-wider uppercase mb-1">TO'LOV CHEKI</div>
                         <div id="pv-address" class="text-xs text-slate-600 font-medium leading-relaxed">
                             <span id="pv-address-text">{{ form.address.value|default:'' }}</span>
                         </div>
@@ -381,12 +381,12 @@
                         </div>
 
                         <div id="pv-payment-method" class="flex justify-between py-1">
-                            <span class="text-slate-500 font-medium">To'lov turi</span>
+                            <span class="text-slate-500 font-medium">Turi</span>
                             <span class="text-slate-800 font-semibold">Naqd</span>
                         </div>
 
                         <div id="pv-payment-date" class="flex justify-between py-1">
-                            <span class="text-slate-500 font-medium">To'lov sanasi</span>
+                            <span class="text-slate-500 font-medium">Sana</span>
                             <span class="text-slate-800 font-semibold">{% now "Y-m-d" %}</span>
                         </div>
 
