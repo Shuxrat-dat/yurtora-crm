@@ -90,6 +90,21 @@ services:
         condition: service_healthy
     logging: *default-logging
 
+  owner_bot:
+    build: .
+    container_name: yurtora_crm_owner_bot
+    restart: unless-stopped
+    command: python manage.py run_owner_bot
+    env_file:
+      - .env
+    environment:
+      DEBUG: "False"
+      DATABASE_URL: postgres://${POSTGRES_USER:-yurtora_user}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-yurtora_crm}
+    depends_on:
+      db:
+        condition: service_healthy
+    logging: *default-logging
+
   backup:
     image: postgres:16-alpine
     container_name: yurtora_crm_backup

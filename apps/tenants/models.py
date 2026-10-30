@@ -159,3 +159,14 @@ class DemoRequest(models.Model):
 
     def __str__(self):
         return f"{self.center_name} ({self.phone})"
+
+
+class OwnerDigestLog(models.Model):
+    """Egasi botining kunlik hisoboti yuborilgan kunlar (bir kunda bir marta)."""
+
+    day = models.DateField(unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Egasi kunlik hisoboti"
+        verbose_name_plural = "Egasi kunlik hisobotlari"

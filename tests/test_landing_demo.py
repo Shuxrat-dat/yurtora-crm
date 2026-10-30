@@ -79,7 +79,7 @@ def test_owner_is_notified_when_telegram_is_configured(public_client, settings, 
     monkeypatch.setattr("apps.notifications.telegram.send_message", lambda chat, text: sent.append((chat, text)))
     public_client.post("/", VALID)
     [(chat, text)] = sent
-    assert chat == "12345" and "Ilm Academy" in text and "+998 90 123 45 67" in text and "Tarif: standart" in text
+    assert chat == 12345 and "Ilm Academy" in text and "+998 90 123 45 67" in text and "Tarif: standart" in text
 
 
 def test_no_notification_when_not_configured_and_failures_never_break_the_form(public_client, settings, monkeypatch):

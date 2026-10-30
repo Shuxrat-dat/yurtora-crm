@@ -153,3 +153,37 @@ class AdminChatView(RoleRequiredMixin, View):
         if not link:
             messages.error(request, "TELEGRAM_BOT_USERNAME sozlanmagan.")
         return render(request, self.template_name, self._context(request, link))
+
+
+class NotifySettingsView(RoleRequiredMixin, View):
+    """Markaz ota-onalarga qaysi xabarlarni yuborishini tanlaydi (umumiy Yurtora boti orqali)."""
+
+    allowed_roles = [User.Role.ADMINISTRATOR]
+    template_name = "notifications/notify_settings.html"
+    FIELDS = ("attendance", "payment", "monthly")
+
+    def _context(self, obj):
+        from .models import TelegramContact
+
+        return {
+            "obj": obj,
+            "configured": telegram.is_configured(),
+            "bot_username": settings.TELEGRAM_BOT_USERNAME.lstrip("@"),
+            "linked_students": TelegramContact.objects.filter(is_active=True).values("student").distinct().count(),
+            "recent": NotificationLog.objects.exclude(kind=NotificationLog.Kind.DEBT).select_related("student")[:15],
+        }
+
+    def get(self, request):
+        from .models import NotifySettings
+
+        return render(request, self.template_name, self._context(NotifySettings.get()))
+
+    def post(self, request):
+        from .models import NotifySettings
+
+        obj = NotifySettings.get()
+        for field in self.FIELDS:
+            setattr(obj, field, request.POST.get(field) == "on")
+        obj.save()
+        messages.success(request, "Sozlamalar saqlandi.")
+        return redirect("notifications:notify_settings")

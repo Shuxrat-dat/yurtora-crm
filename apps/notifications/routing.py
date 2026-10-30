@@ -14,7 +14,7 @@ from django_tenants.utils import schema_context
 
 from apps.tenants.services import active_center_schemas, center_schema_is_active
 
-from . import digest, services, telegram
+from . import digest, events, services, telegram
 
 logger = logging.getLogger(__name__)
 
@@ -95,3 +95,7 @@ def weekly_digest_everywhere():
                 digest.maybe_send_weekly_digest()
             except Exception:  # bitta markaz xatosi boshqalarini to'xtatmasin
                 logger.exception("Haftalik ro'yxat xato: %s", schema)
+            try:
+                events.maybe_send_monthly_reports()
+            except Exception:  # bitta markaz xatosi boshqalarini to'xtatmasin
+                logger.exception("Oylik hisobot xato: %s", schema)

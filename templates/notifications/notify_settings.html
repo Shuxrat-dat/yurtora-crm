@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Telegram xabarlari — Yurtora CRM{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-2xl">
+    <div>
+        <a href="{% url 'students:student_list' %}" class="text-sm text-indigo-600 hover:underline">&larr; O'quvchilar</a>
+        <h1 class="text-2xl font-bold text-slate-900 mt-1">Ota-onalarga Telegram xabarlari</h1>
+        <p class="text-sm text-slate-500 mt-1">
+            Xabarlar umumiy Yurtora boti{% if bot_username %} (@{{ bot_username }}){% endif %} orqali, markazingiz nomi bilan yuboriladi.
+            Ota-ona o'quvchi kartasidagi «Telegram» havolasi orqali ulanadi.
+            Hozir ulangan o'quvchilar: <b>{{ linked_students }}</b>.
+        </p>
+    </div>
+
+    {% if not configured %}
+    <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">Telegram bot hali sozlanmagan: xabarlar navbatda turadi va bot ishga tushganda yuboriladi.</div>
+    {% endif %}
+
+    <form method="post" class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4">
+        {% csrf_token %}
+        <label class="flex items-start gap-3">
+            <input type="checkbox" name="attendance" class="mt-1 h-5 w-5" {% if obj.attendance %}checked{% endif %}>
+            <span><b>Kelmadi / kechikdi</b><br><span class="text-sm text-slate-500">Dars kuni, belgidan 10 daqiqa o'tib. O'qituvchi bu vaqt ichida «Keldi» deb tuzatsa, xabar ketmaydi.</span></span>
+        </label>
+        <label class="flex items-start gap-3">
+            <input type="checkbox" name="payment" class="mt-1 h-5 w-5" {% if obj.payment %}checked{% endif %}>
+            <span><b>To'lov qabul qilindi</b><br><span class="text-sm text-slate-500">Summa, qaysi oy uchun va qolgan qarz.</span></span>
+        </label>
+        <label class="flex items-start gap-3">
+            <input type="checkbox" name="monthly" class="mt-1 h-5 w-5" {% if obj.monthly %}checked{% endif %}>
+            <span><b>Oylik hisobot</b><br><span class="text-sm text-slate-500">Har oyning 1-kuni: o'tgan oy davomati (%) va to'lov holati.</span></span>
+        </label>
+        <p class="text-sm text-slate-500">Qarz eslatmalari avvalgidek faqat siz tasdiqlaganda yuboriladi (<a href="{% url 'notifications:debt_reminders' %}" class="text-indigo-600 hover:underline">Qarz eslatmalari</a>).</p>
+        <button type="submit" class="mv-btn mv-btn--primary">Saqlash</button>
+    </form>
+
+    <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+        <h2 class="font-semibold text-slate-900 mb-3">Oxirgi xabarlar</h2>
+        <ul class="text-sm divide-y divide-slate-100">
+            {% for log in recent %}
+            <li class="py-2 flex items-center justify-between gap-3">
+                <span>{{ log.student.full_name|default:"—" }} · {{ log.get_kind_display }}</span>
+                <span class="text-xs text-slate-500 whitespace-nowrap">{{ log.get_status_display }} · {{ log.created_at|date:"d.m H:i" }}</span>
+            </li>
+            {% empty %}
+            <li class="py-2 text-slate-500">Hali xabar yo'q.</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}

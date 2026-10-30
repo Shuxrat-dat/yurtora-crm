@@ -60,6 +60,13 @@ def mark_attendance(lesson: Lesson, student: Student, status: str, user) -> Atte
         attendance.marked_by = user
         attendance.save(update_fields=["status", "marked_by", "updated_at"])
 
+    # Ota-onaga "kelmadi / kechikdi" xabari (kechiktirib yuboriladi: xato belgini tuzatishga vaqt bor)
+    from django.db import transaction
+
+    from apps.notifications import events
+
+    transaction.on_commit(lambda: events.on_attendance(attendance.pk))
+
     # Jurnal yozuvi
     AttendanceLog.objects.create(
         attendance=attendance,

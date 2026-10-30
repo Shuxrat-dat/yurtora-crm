@@ -9,14 +9,20 @@ logger = logging.getLogger(__name__)
 
 
 def owner_telegram_ready():
-    return bool(settings.TELEGRAM_BOT_TOKEN and settings.YURTORA_OWNER_TELEGRAM_CHAT_ID)
+    token = settings.YURTORA_OWNER_BOT_TOKEN or settings.TELEGRAM_BOT_TOKEN
+    return bool(token and settings.YURTORA_OWNER_TELEGRAM_CHAT_ID)
 
 
 def _send(text):
     from apps.notifications.telegram import TelegramError, send_message
 
+    from .owner_bot import owner_chat_ids
+
+    # Egasi boti sozlangan bo'lsa, demo va takliflar shu botga keladi; aks holda umumiy bot orqali
+    extra = {"token": settings.YURTORA_OWNER_BOT_TOKEN} if settings.YURTORA_OWNER_BOT_TOKEN else {}
     try:
-        send_message(settings.YURTORA_OWNER_TELEGRAM_CHAT_ID, text)
+        for chat_id in owner_chat_ids():
+            send_message(chat_id, text, **extra)
     except TelegramError as exc:
         logger.warning("Egasiga Telegram xabari yuborilmadi: %s", exc)
     except Exception:  # noqa: BLE001 - xabar yuborish hech qachon buyurtmani buzmasligi kerak

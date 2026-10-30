@@ -21,11 +21,13 @@ def is_configured():
     return bool(settings.TELEGRAM_BOT_TOKEN)
 
 
-def _call(method, payload, timeout=15):
-    if not is_configured():
+def _call(method, payload, timeout=15, token=None):
+    """token=None — umumiy (ota-onalar) boti; egasi boti o'z tokenini beradi."""
+    token = token or settings.TELEGRAM_BOT_TOKEN
+    if not token:
         raise TelegramError("TELEGRAM_BOT_TOKEN sozlanmagan.")
     request = urllib.request.Request(
-        API_URL.format(token=settings.TELEGRAM_BOT_TOKEN, method=method),
+        API_URL.format(token=token, method=method),
         data=json.dumps(payload).encode("utf-8"),
         headers={"Content-Type": "application/json"},
     )
@@ -42,12 +44,12 @@ def _call(method, payload, timeout=15):
     return body["result"]
 
 
-def send_message(chat_id, text, reply_markup=None):
+def send_message(chat_id, text, reply_markup=None, token=None):
     """Oddiy matn (parse_mode yo'q — ism va summalardagi belgilar xabarni buzmaydi)."""
     payload = {"chat_id": chat_id, "text": text}
     if reply_markup:
         payload["reply_markup"] = reply_markup
-    return _call("sendMessage", payload)
+    return _call("sendMessage", payload, token=token)
 
 
 def answer_callback_query(callback_id, text=""):
@@ -62,8 +64,8 @@ def remove_buttons(chat_id, message_id):
     )
 
 
-def get_updates(offset=None, timeout=30):
+def get_updates(offset=None, timeout=30, token=None):
     payload = {"timeout": timeout, "allowed_updates": ["message", "callback_query"]}
     if offset is not None:
         payload["offset"] = offset
-    return _call("getUpdates", payload, timeout=timeout + 10)
+    return _call("getUpdates", payload, timeout=timeout + 10, token=token)

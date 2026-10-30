@@ -340,7 +340,7 @@ def register_payment(
 
     try:
         with transaction.atomic():
-            return LedgerEntry.objects.create(
+            entry = LedgerEntry.objects.create(
                 student=student,
                 group=group,
                 kind=LedgerEntry.Kind.PAYMENT,
@@ -352,6 +352,11 @@ def register_payment(
                 created_by=user,
                 idempotency_key=key,
             )
+            # Ota-onaga "to'lov qabul qilindi" xabari: faqat yozuv bazaga tushgandan keyin navbatga qo'yiladi
+            from apps.notifications import events
+
+            transaction.on_commit(lambda: events.on_payment(entry.pk))
+            return entry
     except IntegrityError:
         if key and LedgerEntry.objects.filter(idempotency_key=key).exists():
             raise DuplicatePayment("Bu to'lov allaqachon qabul qilingan.") from None  # bir vaqtdagi ikki so'rov

@@ -59,11 +59,15 @@ class NotificationLog(models.Model):
 
     class Kind(models.TextChoices):
         DEBT = "debt", "Qarz eslatmasi"
+        ATTENDANCE = "attendance", "Davomat"
+        PAYMENT = "payment", "To'lov qabul qilindi"
+        MONTHLY = "monthly", "Oylik hisobot"
 
     class Status(models.TextChoices):
         PENDING = "pending", "Navbatda"
         SENT = "sent", "Yuborildi"
         FAILED = "failed", "Xato"
+        CANCELLED = "cancelled", "Bekor qilindi"
 
     student = models.ForeignKey(
         "students.Student",
@@ -73,8 +77,12 @@ class NotificationLog(models.Model):
     )
     chat_id = models.BigIntegerField()
     kind = models.CharField(max_length=16, choices=Kind.choices)
+    # Voqea kaliti: "att<davomat id>", "pay<yozuv id>", "m202610" — bitta voqea bir chatga bir marta
+    ref = models.CharField(max_length=32, blank=True, default="")
+    # Shu vaqtgacha yuborilmaydi: davomat xatosini o'qituvchi tuzatib ulgurishi uchun
+    send_after = models.DateTimeField(null=True, blank=True)
     text = models.TextField()
-    status = models.CharField(max_length=8, choices=Status.choices)
+    status = models.CharField(max_length=10, choices=Status.choices)
     error = models.CharField(max_length=255, blank=True)
     sent_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -93,7 +101,7 @@ class NotificationLog(models.Model):
         constraints = [
             # Bir chatga bir o'quvchi uchun navbatda faqat bitta xabar: qo'sh bosish dublikat yaratmaydi
             models.UniqueConstraint(
-                fields=["student", "chat_id", "kind"],
+                fields=["student", "chat_id", "kind", "ref"],
                 condition=models.Q(status="pending"),
                 name="unique_pending_notification",
             )
@@ -151,3 +159,21 @@ class DebtDigest(models.Model):
         ordering = ["-created_at"]
         verbose_name = "Haftalik qarz ro'yxati"
         verbose_name_plural = "Haftalik qarz ro'yxatlari"
+
+
+class NotifySettings(models.Model):
+    """Markaz ota-onalarga qaysi xabarlarni yuboradi (bitta yozuv)."""
+
+    attendance = models.BooleanField("Kelmadi / kechikdi xabari", default=True)
+    payment = models.BooleanField("To'lov qabul qilindi xabari", default=True)
+    monthly = models.BooleanField("Oylik hisobot (davomat va balans)", default=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Bildirishnoma sozlamalari"
+        verbose_name_plural = "Bildirishnoma sozlamalari"
+
+    @classmethod
+    def get(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj

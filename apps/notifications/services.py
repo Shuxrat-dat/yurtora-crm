@@ -191,9 +191,14 @@ def process_pending_notifications(limit=25, pause=0.05):
 
     Har xabar o'z tranzaksiyasida: bot to'xtasa, yuborilmagan xabarlar navbatda qoladi va keyin yuboriladi.
     """
+    from django.db.models import Q
+
+    from . import events
+
     done = 0
     ids = list(
         NotificationLog.objects.filter(status=NotificationLog.Status.PENDING)
+        .filter(Q(send_after__isnull=True) | Q(send_after__lte=timezone.now()))
         .order_by("id")
         .values_list("id", flat=True)[:limit]
     )
@@ -206,8 +211,16 @@ def process_pending_notifications(limit=25, pause=0.05):
             )
             if log is None:
                 continue
+            text = log.text
+            if log.kind == NotificationLog.Kind.ATTENDANCE:
+                # Belgi yuborish paytida qayta tekshiriladi: o'qituvchi tuzatgan bo'lsa, xabar ketmaydi
+                text = events.current_attendance_text(log.ref)
+                if text is None:
+                    log.status = NotificationLog.Status.CANCELLED
+                    log.save(update_fields=["status"])
+                    continue
             try:
-                telegram.send_message(log.chat_id, log.text)
+                telegram.send_message(log.chat_id, text)
                 log.status = NotificationLog.Status.SENT
             except telegram.TelegramError as exc:
                 log.status = NotificationLog.Status.FAILED
@@ -225,7 +238,14 @@ def process_pending_notifications(limit=25, pause=0.05):
 
 
 def pending_count():
-    return NotificationLog.objects.filter(status=NotificationLog.Status.PENDING).count()
+    """Hozir yuborishga tayyor xabarlar (kechiktirilgan davomat xabarlari vaqti kelmaguncha hisoblanmaydi)."""
+    from django.db.models import Q
+
+    return (
+        NotificationLog.objects.filter(status=NotificationLog.Status.PENDING)
+        .filter(Q(send_after__isnull=True) | Q(send_after__lte=timezone.now()))
+        .count()
+    )
 
 
 # --- Bot buyruqlari ----------------------------------------------------------
@@ -274,7 +294,7 @@ def handle_update(update):
                 "Havola yaroqsiz yoki muddati tugagan. Administratordan yangi havola so'rang."
             )
         return chat_id, (
-            f"Ulandi: {student.full_name}. Bundan buyon shu yerga to'lov eslatmalari keladi.\n"
+            f"Ulandi: {student.full_name}. Bundan buyon shu yerga davomat, to'lov va oylik hisobot xabarlari keladi.\n"
             "To'xtatish: /stop"
         )
     if command == "/stop":

@@ -67,6 +67,9 @@ ROOT_DOMAIN = env.str("ROOT_DOMAIN", default="localhost")
 # Yurtora bilan bog'lanish (obuna/to'lov): bloklangan sahifada va "Obuna" sahifasida ko'rsatiladi
 # Yangi demo buyurtmalari haqida xabar olish uchun egasining Telegram chat ID si (bot tokeni ham kerak)
 YURTORA_OWNER_TELEGRAM_CHAT_ID = env.str("YURTORA_OWNER_TELEGRAM_CHAT_ID", default="")
+# Egasi uchun alohida bot (statistika, demo buyurtmalar). Bo'sh bo'lsa, egasi xabarlari umumiy bot orqali ketadi.
+YURTORA_OWNER_BOT_TOKEN = env.str("YURTORA_OWNER_BOT_TOKEN", default="")
+YURTORA_OWNER_DIGEST_HOUR = env.int("YURTORA_OWNER_DIGEST_HOUR", default=21)  # Asia/Tashkent
 YURTORA_SUPPORT = env.str("YURTORA_SUPPORT", default="+998 95 000 57 86, Telegram: @shukhrat_dev")
 
 MIDDLEWARE = [
