@@ -221,6 +221,9 @@ class StudentListView(RoleRequiredMixin, ListView):
             for e in st.open_enrollments:
                 e.group_balance = group_balances.get((st.pk, e.group_id), 0)
                 e.schedule = schedules.get(e.group_id, "")
+            if only_own:
+                # O'qituvchi umumiy balansni emas, faqat o'z guruhlaridagi balansni ko'radi
+                st.balance = sum(e.group_balance for e in st.open_enrollments)
         context["students"] = page_students
         return context
 
@@ -302,7 +305,9 @@ class StudentDetailView(RoleRequiredMixin, DetailView):
         context["enrollments_with_balance"] = []
         context["ledger_entries"] = []
         context["payment_form"] = None
-        if not user_has_role(self.request.user, [User.Role.ADMINISTRATOR, User.Role.ACCOUNTANT]):
+        # O'qituvchi o'z guruhlaridagi to'lov holatini faqat ko'radi: to'lov qabul qila olmaydi
+        is_teacher = self.request.user.role == User.Role.TEACHER
+        if not is_teacher and not user_has_role(self.request.user, [User.Role.ADMINISTRATOR, User.Role.ACCOUNTANT]):
             return context
 
         from apps.finance.forms import PaymentForm
@@ -313,7 +318,10 @@ class StudentDetailView(RoleRequiredMixin, DetailView):
         enrollments_with_balance = []
         from apps.finance.services import monthly_breakdown
 
-        for enrollment in self.object.enrollments.select_related("group__course"):
+        finance_enrollments = self.object.enrollments.select_related("group__course")
+        if is_teacher:
+            finance_enrollments = finance_enrollments.filter(group__teacher__user=self.request.user)
+        for enrollment in finance_enrollments:
             balance = get_balance(self.object, enrollment.group)
             enrollments_with_balance.append(
                 {
@@ -327,6 +335,13 @@ class StudentDetailView(RoleRequiredMixin, DetailView):
         for e in context["card_enrollments"]:
             e.balance = balances.get(e.pk, 0)
         context["total_balance"] = sum(balances.values())
+        if is_teacher:
+            context["ledger_entries"] = (
+                LedgerEntry.objects.filter(student=self.object, group__teacher__user=self.request.user)
+                .select_related("group", "lesson", "created_by")
+                .order_by("-entry_date", "-created_at")[:50]
+            )
+            return context
         context["history"] = student_history(self.object)
 
         # "Guruhga qo'shish" oynasi: faol guruhlar va filtrlar uchun kurs/o'qituvchi

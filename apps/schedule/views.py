@@ -147,131 +147,119 @@ def _parse_month(value, default):
         return default.replace(day=1)
 
 
+def _check_teacher_lesson(user, lesson):
+    """O'qituvchi faqat o'z darsini ko'radi va belgilaydi."""
+    if user.role != User.Role.TEACHER:
+        return
+    teacher_profile = Teacher.objects.filter(user=user).first()
+    if teacher_profile is None or lesson.teacher_id != teacher_profile.pk:
+        raise PermissionDenied("O'qituvchi faqat o'z darsini ko'ra oladi.")
+
+
+def _enrolled_students(lesson):
+    """Shu guruhda dars sanasida faol (yoki sinovdagi) a'zolikdagi o'quvchilar."""
+    from django.db.models import Q
+
+    from apps.students.models import Student
+
+    return (
+        Student.objects.filter(
+            enrollments__group=lesson.group,
+            enrollments__status__in=[Enrollment.Status.ACTIVE, Enrollment.Status.TRIAL],
+            enrollments__start_date__lte=lesson.date,
+        )
+        .filter(Q(enrollments__end_date__isnull=True) | Q(enrollments__end_date__gte=lesson.date))
+        .distinct()
+        .order_by("last_name", "first_name")
+    )
+
+
+def _attendance_context(lesson, user):
+    """Davomat ro'yxati: o'quvchi, belgisi va shu guruhdagi balansi (o'qituvchi faqat ko'radi)."""
+    from django.utils import timezone
+
+    from apps.groups.grid import student_balances
+
+    students = list(_enrolled_students(lesson))
+    att_map = {a.student_id: a for a in Attendance.objects.filter(lesson=lesson, student__in=students)}
+    balances = student_balances(lesson.group)
+    rows = [
+        {"student": st, "attendance": att_map.get(st.pk), "balance": balances.get(st.pk, 0)}
+        for st in students
+    ]
+    return {
+        "lesson": lesson,
+        "student_rows": rows,
+        "marked_count": sum(1 for row in rows if row["attendance"]),
+        "can_mark": lesson.status != Lesson.Status.CANCELLED and lesson.date <= timezone.localdate(),
+        "can_manage": user.role in [User.Role.DIRECTOR, User.Role.ADMINISTRATOR],
+    }
+
+
+def _attendance_response(request, lesson):
+    """HTMX bo'lsa butun davomat bloki (hisoblagich va dars holati sahifani yangilamasdan o'zgaradi)."""
+    if request.headers.get("HX-Request") == "true":
+        lesson.refresh_from_db()
+        context = _attendance_context(lesson, request.user)
+        context["oob"] = True
+        return render(request, "schedule/_attendance_block.html", context)
+    return redirect("schedule:lesson_detail", pk=lesson.pk)
+
+
 class LessonDetailView(RoleRequiredMixin, View):
-    """Dars sahifasi: davomat, holat o'zgartirish, bekor qilish, ko'chirish."""
+    """Dars sahifasi: davomat (telefonda bir qo'l bilan), holat, bekor qilish, ko'chirish."""
 
     allowed_roles = [User.Role.ADMINISTRATOR, User.Role.TEACHER]
     template_name = "schedule/lesson_detail.html"
 
-    def _get_lesson(self, pk, user):
-        lesson = get_object_or_404(
-            Lesson.objects.select_related("group", "room", "teacher", "group__course"),
-            pk=pk,
-        )
-        # Teacher o'z darsini ko'ra oladi
-        if user.role == User.Role.TEACHER:
-            try:
-                teacher_profile = Teacher.objects.get(user=user)
-            except Teacher.DoesNotExist:
-                raise PermissionDenied from None
-            if lesson.teacher != teacher_profile:
-                raise PermissionDenied("O'qituvchi faqat o'z darsini ko'ra oladi.")
-        return lesson
-
-    def _get_enrolled_students(self, lesson):
-        """Shu guruhda dars sanasida faol a'zolikdagi o'quvchilar."""
-        from django.db.models import Q
-
-        from apps.students.models import Student
-
-        return (
-            Student.objects.filter(
-                enrollments__group=lesson.group,
-                enrollments__status__in=[
-                    Enrollment.Status.ACTIVE,
-                    Enrollment.Status.TRIAL,
-                ],
-                enrollments__start_date__lte=lesson.date,
-            )
-            .filter(
-                Q(enrollments__end_date__isnull=True)
-                | Q(enrollments__end_date__gte=lesson.date)
-            )
-            .distinct()
-            .order_by("last_name", "first_name")
-        )
-
     def get(self, request, pk):
-        lesson = self._get_lesson(pk, request.user)
-        students = self._get_enrolled_students(lesson)
-
-        # Davomat yozuvlarini fetch qilish
-        att_map = {
-            a.student_id: a
-            for a in Attendance.objects.filter(lesson=lesson, student__in=students)
-        }
-
-        student_rows = []
-        for st in students:
-            att = att_map.get(st.pk)
-            student_rows.append({"student": st, "attendance": att})
-
-        context = {
-            "lesson": lesson,
-            "student_rows": student_rows,
-            "attendance_statuses": Attendance.Status.choices,
-            "cancel_form": CancelLessonForm(),
-            "reschedule_form": RescheduleLessonForm(),
-            "can_manage": request.user.role in [User.Role.DIRECTOR, User.Role.ADMINISTRATOR],
-        }
+        lesson = get_object_or_404(
+            Lesson.objects.select_related("group", "room", "teacher", "group__course"), pk=pk
+        )
+        _check_teacher_lesson(request.user, lesson)
+        context = _attendance_context(lesson, request.user)
+        context["cancel_form"] = CancelLessonForm()
+        context["reschedule_form"] = RescheduleLessonForm()
         return render(request, self.template_name, context)
 
 
 class MarkAttendanceView(RoleRequiredMixin, View):
-    """HTMX: o'quvchining davomat holatini bir klikda belgilash."""
+    """HTMX: o'quvchining davomat holatini bir bosishda belgilash."""
 
     allowed_roles = [User.Role.ADMINISTRATOR, User.Role.TEACHER]
 
     def post(self, request, pk):
-        lesson = get_object_or_404(Lesson, pk=pk)
-        student_id = request.POST.get("student_id")
-        status = request.POST.get("status")
-
-        # Teacher check
-        if request.user.role == User.Role.TEACHER:
-            try:
-                teacher_profile = Teacher.objects.get(user=request.user)
-            except Teacher.DoesNotExist:
-                raise PermissionDenied from None
-            if lesson.teacher != teacher_profile:
-                raise PermissionDenied
+        lesson = get_object_or_404(Lesson.objects.select_related("group", "room", "teacher"), pk=pk)
+        _check_teacher_lesson(request.user, lesson)
 
         from apps.students.models import Student
 
-        student = get_object_or_404(Student, pk=student_id)
-
+        student = get_object_or_404(Student, pk=parse_int(request.POST.get("student_id")) or 0)
         try:
-            attendance = mark_attendance(
-                lesson=lesson,
-                student=student,
-                status=status,
-                user=request.user,
-            )
+            mark_attendance(lesson=lesson, student=student, status=request.POST.get("status"), user=request.user)
         except ValidationError as e:
             messages.error(request, e.message)
             return redirect("schedule:lesson_detail", pk=pk)
+        return _attendance_response(request, lesson)
 
-        held_now = getattr(attendance, "lesson_marked_held", False)
-        if held_now:
-            messages.success(request, "Davomat belgilandi: dars o'tildi deb belgilandi va to'lovlar hisoblandi.")
 
-        # HTMX javob: faqat shu o'quvchi qatorini qaytarish
-        if request.headers.get("HX-Request") == "true":
-            response = render(
-                request,
-                "schedule/_attendance_row.html",
-                {
-                    "student": student,
-                    "attendance": attendance,
-                    "lesson": lesson,
-                    "attendance_statuses": Attendance.Status.choices,
-                    "can_manage": request.user.role in [User.Role.DIRECTOR, User.Role.ADMINISTRATOR],
-                },
-            )
-            if held_now:
-                response["HX-Refresh"] = "true"  # dars holati sahifa sarlavhasida ham yangilansin
-            return response
-        return redirect("schedule:lesson_detail", pk=pk)
+class MarkAllPresentView(RoleRequiredMixin, View):
+    """Hali belgilanmagan barcha o'quvchilarni "Keldi" deb belgilash (keyin kelmaganlarni tuzatish oson)."""
+
+    allowed_roles = [User.Role.ADMINISTRATOR, User.Role.TEACHER]
+
+    def post(self, request, pk):
+        lesson = get_object_or_404(Lesson.objects.select_related("group", "room", "teacher"), pk=pk)
+        _check_teacher_lesson(request.user, lesson)
+        marked = set(Attendance.objects.filter(lesson=lesson).values_list("student_id", flat=True))
+        try:
+            for student in _enrolled_students(lesson):
+                if student.pk not in marked:
+                    mark_attendance(lesson=lesson, student=student, status=Attendance.Status.PRESENT, user=request.user)
+        except ValidationError as e:
+            messages.error(request, e.message)
+            return redirect("schedule:lesson_detail", pk=pk)
+        return _attendance_response(request, lesson)
 
 
 class MarkLessonHeldView(RoleRequiredMixin, View):
@@ -281,15 +269,7 @@ class MarkLessonHeldView(RoleRequiredMixin, View):
 
     def post(self, request, pk):
         lesson = get_object_or_404(Lesson, pk=pk)
-
-        # Teacher check
-        if request.user.role == User.Role.TEACHER:
-            try:
-                teacher_profile = Teacher.objects.get(user=request.user)
-            except Teacher.DoesNotExist:
-                raise PermissionDenied from None
-            if lesson.teacher != teacher_profile:
-                raise PermissionDenied
+        _check_teacher_lesson(request.user, lesson)
 
         try:
             from apps.schedule.services import mark_lesson_held

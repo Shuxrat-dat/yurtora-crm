@@ -117,13 +117,14 @@ class TestFinanceAccess:
 
 @pytest.mark.django_db
 class TestTeacherCannotSeeFinance:
-    def test_student_detail_has_no_finance_context(self, client, teacher_user, school):
+    def test_student_detail_finance_is_read_only_for_teacher(self, client, teacher_user, school):
+        # O'qituvchi o'z guruhidagi balansni ko'radi, lekin to'lov qabul qila olmaydi va tarixni ko'rmaydi
         client.force_login(teacher_user)
         response = client.get(reverse("students:student_detail", args=[school["student"].pk]))
         assert response.status_code == 200
         assert response.context["payment_form"] is None
-        assert response.context["ledger_entries"] == []
-        assert response.context["enrollments_with_balance"] == []
+        assert response.context["history"] == []
+        assert all(item["enrollment"].group.teacher.user == teacher_user for item in response.context["enrollments_with_balance"])
 
     def test_student_detail_hides_phone_from_teacher(self, client, teacher_user, school):
         client.force_login(teacher_user)

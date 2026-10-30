@@ -1,0 +1,65 @@
+{% load mv %}
+{# Davomat: har o'quvchiga ikkita katta tugma (Keldi / Kelmadi), qo'shimcha holatlar kichik. Telefonda bosh barmoq bilan. #}
+<section id="att-block" class="yt-att" aria-labelledby="att-title">
+    <header class="yt-att-head">
+        <div>
+            <h2 id="att-title">Davomat</h2>
+            <p class="yt-att-progress"><b>{{ marked_count }}</b> / {{ student_rows|length }} belgilandi
+                {% if lesson.status == 'held' %}<span class="mv-pill mv-pill--ok">Dars o'tildi</span>{% endif %}
+            </p>
+        </div>
+        {% if can_mark and student_rows and marked_count < student_rows|length %}
+        <form method="post" action="{% url 'schedule:mark_all_present' lesson.pk %}"
+              hx-post="{% url 'schedule:mark_all_present' lesson.pk %}" hx-target="#att-block" hx-swap="outerHTML">
+            {% csrf_token %}
+            <button type="submit" class="yt-att-all">✓ Hammasi keldi</button>
+        </form>
+        {% endif %}
+    </header>
+    {% if can_mark and student_rows and marked_count < student_rows|length %}
+    <p class="yt-att-tip">Avval «Hammasi keldi», keyin kelmaganlarga «Kelmadi» bosing.</p>
+    {% endif %}
+
+    {% if lesson.status == 'cancelled' %}
+    <p class="yt-att-empty">Bekor qilingan darsda davomat belgilab bo'lmaydi.</p>
+    {% elif not student_rows %}
+    <p class="yt-att-empty">Guruhda faol o'quvchilar topilmadi.</p>
+    {% else %}
+    {% if not can_mark %}<p class="yt-att-empty">Davomatni dars kuni belgilash mumkin.</p>{% endif %}
+    <ul class="yt-att-list">
+        {% for row in student_rows %}
+        {% with st=row.student att=row.attendance %}
+        <li class="yt-att-item{% if att %} is-{{ att.status }}{% endif %}">
+            <div class="yt-att-who">
+                <a href="{% url 'students:student_detail' st.pk %}" class="yt-att-name">{{ st.full_name }}</a>
+                <span class="yt-att-meta">
+                    {% if att %}{{ att.get_status_display }}{% else %}Belgilanmagan{% endif %}
+                    {% if row.balance < 0 %}<span class="yt-att-debt">Qarz {{ row.balance|som }}</span>{% endif %}
+                </span>
+            </div>
+            {% if can_mark %}
+            <form method="post" action="{% url 'schedule:mark_attendance' lesson.pk %}" class="yt-att-actions"
+                  hx-post="{% url 'schedule:mark_attendance' lesson.pk %}" hx-target="#att-block" hx-swap="outerHTML">
+                {% csrf_token %}
+                <input type="hidden" name="student_id" value="{{ st.pk }}">
+                <button type="submit" name="status" value="present" class="yt-att-btn is-yes{% if att.status == 'present' %} is-on{% endif %}" aria-pressed="{% if att.status == 'present' %}true{% else %}false{% endif %}">✓ Keldi</button>
+                <button type="submit" name="status" value="absent" class="yt-att-btn is-no{% if att.status == 'absent' %} is-on{% endif %}" aria-pressed="{% if att.status == 'absent' %}true{% else %}false{% endif %}">✕ Kelmadi</button>
+                <details class="yt-att-more">
+                    <summary aria-label="Boshqa holat">•••</summary>
+                    <div>
+                        <button type="submit" name="status" value="late" class="yt-att-btn is-late{% if att.status == 'late' %} is-on{% endif %}">Kechikdi</button>
+                        <button type="submit" name="status" value="excused" class="yt-att-btn is-excused{% if att.status == 'excused' %} is-on{% endif %}">Sababli</button>
+                    </div>
+                </details>
+            </form>
+            {% endif %}
+        </li>
+        {% endwith %}
+        {% endfor %}
+    </ul>
+    {% endif %}
+</section>
+{% if oob %}{# HTMX javobi: sarlavhadagi dars holati ham yangilanadi #}
+{% include "schedule/_lesson_status.html" %}
+{% include "schedule/_lesson_held_action.html" %}
+{% endif %}

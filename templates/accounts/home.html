@@ -44,16 +44,19 @@
             {% if today_lessons %}
             <div class="space-y-3">
                 {% for lesson in today_lessons %}
-                <div class="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-200">
-                    <div>
+                <a href="{% url 'schedule:lesson_detail' lesson.pk %}" class="flex items-center justify-between gap-3 p-4 bg-slate-50 rounded-lg border border-slate-200 hover:border-teal-500">
+                    <div class="min-w-0">
                         <div class="font-semibold text-slate-900">{{ lesson.group.name }}</div>
-                        <div class="text-sm text-slate-600">{{ lesson.group.course.name }}</div>
+                        <div class="text-sm text-slate-600">{{ lesson.start_time|time:"H:i" }}–{{ lesson.end_time|time:"H:i" }} · {{ lesson.room.name }}</div>
                     </div>
-                    <div class="text-right">
-                        <div class="text-sm font-medium text-slate-900">{{ lesson.start_time|time:"H:i" }}–{{ lesson.end_time|time:"H:i" }}</div>
-                        <div class="text-xs text-slate-500">{{ lesson.room.name }}</div>
-                    </div>
-                </div>
+                    {% if lesson.status == 'held' %}
+                    <span class="mv-pill mv-pill--ok">O'tildi</span>
+                    {% elif lesson.status == 'cancelled' %}
+                    <span class="mv-pill">Bekor</span>
+                    {% else %}
+                    <span class="mv-btn mv-btn--primary whitespace-nowrap">Davomat</span>
+                    {% endif %}
+                </a>
                 {% endfor %}
             </div>
             {% else %}

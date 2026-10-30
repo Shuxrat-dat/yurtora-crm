@@ -1,0 +1,8 @@
+<div id="lesson-held-action"{% if oob %} hx-swap-oob="true"{% endif %}>
+    {% if lesson.status == 'scheduled' %}
+    <form method="post" action="{% url 'schedule:mark_lesson_held' lesson.pk %}" class="inline">
+        {% csrf_token %}
+        <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition shadow-sm">✓ Dars o'tildi</button>
+    </form>
+    {% endif %}
+</div>

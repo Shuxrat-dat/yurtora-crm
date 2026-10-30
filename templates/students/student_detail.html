@@ -9,7 +9,7 @@
     <aside class="mv-profile">
         <div class="mv-profile-top">
             {% if student.status == 'active' %}<span class="mv-pill mv-pill--ok">Faol</span>{% elif student.status == 'frozen' %}<span class="mv-pill mv-pill--cyan">Muzlatilgan</span>{% else %}<span class="mv-pill">Arxivlangan</span>{% endif %}
-            {% if user.role != 'teacher' and total_balance is not None %}
+            {% if total_balance is not None %}
             <span class="mv-balance {% if total_balance < 0 %}is-debt{% elif total_balance > 0 %}is-plus{% endif %}">{{ total_balance|som }} so'm</span>
             {% endif %}
         </div>
@@ -73,7 +73,7 @@
     <section class="mv-card-main">
         <nav class="mv-cardtabs" role="tablist" aria-label="O'quvchi bo'limlari">
             <button type="button" role="tab" data-tab="groups">Guruhlar</button>
-            {% if user.role != 'teacher' %}<button type="button" role="tab" data-tab="payments">To'lovlar</button>{% endif %}
+            {% if total_balance is not None %}<button type="button" role="tab" data-tab="payments">To'lovlar</button>{% endif %}
             <button type="button" role="tab" data-tab="attendance">Davomat</button>
             <button type="button" role="tab" data-tab="guardians">Ota-onasi</button>
             <button type="button" role="tab" data-tab="notes">Izoh</button>
@@ -95,7 +95,7 @@
                     <header>
                         <a href="{% url 'groups:group_detail' e.group.pk %}" class="mv-gcard-title">{{ e.group.name }}</a>
                         {% if e.status == 'active' %}<span class="mv-pill mv-pill--ok">Faol</span>{% elif e.status == 'trial' %}<span class="mv-pill mv-pill--gold">Sinov</span>{% elif e.status == 'frozen' %}<span class="mv-pill mv-pill--cyan">Muzlatilgan</span>{% else %}<span class="mv-pill">Tugallangan</span>{% endif %}
-                        {% if user.role != 'teacher' and e.balance is not None %}
+                        {% if e.balance is not None %}
                         <span class="mv-balance mv-balance--sm {% if e.balance < 0 %}is-debt{% elif e.balance > 0 %}is-plus{% endif %}">{{ e.balance|som }}</span>
                         {% endif %}
                     </header>
@@ -160,7 +160,7 @@
             </div>
         </div>
 
-        {% if user.role != 'teacher' %}
+        {% if total_balance is not None %}
         <!-- To'lovlar -->
         <div data-panel="payments" role="tabpanel" hidden>
             <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-5">
@@ -264,7 +264,7 @@
                                     <td class="px-3 py-2 text-right font-semibold whitespace-nowrap {% if entry.amount < 0 %}text-red-700{% else %}text-emerald-700{% endif %}">{% if entry.amount > 0 %}+{% endif %}{{ entry.amount|som }}</td>
                                     <td class="px-3 py-2 text-slate-500 text-xs">{{ entry.comment|truncatewords:10 }}</td>
                                     <td class="px-3 py-2 text-right whitespace-nowrap">
-                                        {% if entry.kind == 'payment' %}
+                                        {% if entry.kind == 'payment' and user.role != 'teacher' %}
                                         <a href="{% url 'finance:receipt' entry.pk %}" target="_blank" class="text-indigo-600 text-xs font-semibold">Chek</a>
                                         {% elif entry.kind == 'charge' and user.role == 'director' %}
                                         <form method="post" action="{% url 'finance:excused_credit' entry.pk %}" class="inline">

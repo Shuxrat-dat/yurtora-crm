@@ -296,3 +296,29 @@ document.addEventListener('change', (e) => {
   }
   if (hint) hint.textContent = option && option.dataset.debtHint ? 'Qarz oylari: ' + option.dataset.debtHint : '';
 });
+
+// --- HTMX so'rovi xato bilan tugasa (masalan obuna faqat o'qish rejimida yoki internet uzilgan), tugma "jim" qolmasin ---
+(() => {
+  let timer;
+  function toast(text) {
+    let el = document.getElementById('yt-toast');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'yt-toast';
+      el.className = 'yt-toast';
+      el.setAttribute('role', 'alert');
+      document.body.appendChild(el);
+    }
+    el.textContent = text;
+    el.classList.add('is-on');
+    clearTimeout(timer);
+    timer = setTimeout(() => el.classList.remove('is-on'), 5000);
+  }
+  document.addEventListener('htmx:responseError', (e) => {
+    const status = e.detail.xhr ? e.detail.xhr.status : 0;
+    toast(status === 403
+      ? "Saqlanmadi: ruxsat yo'q yoki markaz obunasi faqat o'qish rejimida."
+      : "Saqlanmadi: serverda xato. Sahifani yangilab, qayta urinib ko'ring.");
+  });
+  document.addEventListener('htmx:sendError', () => toast("Saqlanmadi: internet aloqasini tekshiring."));
+})();

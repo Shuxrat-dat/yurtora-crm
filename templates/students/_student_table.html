@@ -9,7 +9,7 @@
                     <th scope="col" class="px-4 py-3.5">O'quvchi</th>
                     <th scope="col" class="px-4 py-3.5">Telefon</th>
                     <th scope="col" class="px-4 py-3.5">Guruhlar</th>
-                    {% if user.role != 'teacher' %}<th scope="col" class="px-4 py-3.5 text-right">Balans</th>{% endif %}
+                    <th scope="col" class="px-4 py-3.5 text-right">Balans</th>
                     <th scope="col" class="px-4 py-3.5">Izoh</th>
                     <th scope="col" class="px-4 py-3.5 text-right"><span class="sr-only">Amallar</span></th>
                 </tr>
@@ -34,7 +34,7 @@
                                 <div class="flex items-center justify-between gap-2">
                                     <span class="font-semibold">{{ e.group.name }}</span>
                                     {% if e.status == 'trial' %}<span class="mv-pill mv-pill--gold">Sinov</span>{% elif e.status == 'frozen' %}<span class="mv-pill mv-pill--cyan">Muzlatilgan</span>{% endif %}
-                                    {% if user.role != 'teacher' and e.group_balance %}<span class="text-xs font-semibold {% if e.group_balance < 0 %}text-red-700{% else %}text-emerald-700{% endif %}">{{ e.group_balance|som }}</span>{% endif %}
+                                    {% if e.group_balance %}<span class="text-xs font-semibold {% if e.group_balance < 0 %}text-red-700{% else %}text-emerald-700{% endif %}">{{ e.group_balance|som }}</span>{% endif %}
                                 </div>
                                 <div class="text-xs text-slate-500">{{ e.schedule|default:"Jadval belgilanmagan" }}{% if e.group.teacher %}, {{ e.group.teacher.full_name }}{% endif %}</div>
                             </div>
@@ -43,12 +43,10 @@
                         {% endfor %}
                         </div>
                     </td>
-                    {% if user.role != 'teacher' %}
                     <td class="px-4 py-3 text-right whitespace-nowrap">
                         <span class="font-semibold {% if student.balance < 0 %}text-red-700{% elif student.balance > 0 %}text-emerald-700{% else %}text-slate-500{% endif %}">{{ student.balance|som }}</span>
                         <span class="text-xs text-slate-400">so'm</span>
                     </td>
-                    {% endif %}
                     <td class="px-4 py-3 text-xs text-slate-500 max-w-[14rem]">{{ student.notes|truncatechars:60|default:"—" }}</td>
                     <td class="px-4 py-3 text-right">
                         <details class="mv-menu">

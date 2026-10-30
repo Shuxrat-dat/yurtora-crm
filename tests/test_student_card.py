@@ -56,10 +56,12 @@ def test_card_renders_for_admin_with_tabs_and_calendar(client, admin_user, setup
     assert setup["group"] in resp.context["enroll_groups"]
 
 
-def test_teacher_sees_calendar_but_no_finance_or_history(client, teacher_user, setup):
+def test_teacher_sees_calendar_and_payments_but_no_history(client, teacher_user, setup):
+    # O'qituvchi o'z guruhidagi to'lov holatini ko'radi (faqat ko'rish), tarixni ko'rmaydi
     client.force_login(teacher_user)
     html = client.get(reverse("students:student_detail", args=[setup["student"].pk])).content.decode()
-    assert 'data-tab="payments"' not in html and 'data-tab="history"' not in html
+    assert 'data-tab="payments"' in html and 'data-tab="history"' not in html
+    assert "data-pay-student" not in html
     assert 'id="enroll-modal"' not in html
 
 

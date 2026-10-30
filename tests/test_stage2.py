@@ -86,7 +86,7 @@ def enrollment(db, student, group):
         student=student,
         group=group,
         status=Enrollment.Status.ACTIVE,
-        start_date=date.today() - timedelta(days=30),
+        start_date=date(2026, 9, 1),  # darslar sanasi qat'iy (28.09.2026): bugungi kunga bog'liq emas
     )
 
 

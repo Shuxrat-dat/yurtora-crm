@@ -1,0 +1,2 @@
+<span id="lesson-status"{% if oob %} hx-swap-oob="true"{% endif %} class="px-2.5 py-0.5 rounded-full text-xs font-semibold
+    {% if lesson.status == 'scheduled' %}bg-indigo-100 text-indigo-800{% elif lesson.status == 'held' %}bg-emerald-100 text-emerald-800{% else %}bg-red-100 text-red-800{% endif %}">{{ lesson.get_status_display }}</span>
