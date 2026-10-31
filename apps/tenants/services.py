@@ -12,7 +12,7 @@ SUBDOMAIN_RE = re.compile(r"^[a-z][a-z0-9]{2,29}$")
 RESERVED_SUBDOMAINS = frozenset({
     "www", "admin", "api", "app", "mail", "smtp", "imap", "ftp", "static", "media", "public",
     "yurtora", "support", "help", "billing", "pay", "payment", "status", "test", "demo", "dev",
-    "staging", "login", "signup", "account", "accounts", "cdn", "docs", "blog",
+    "staging", "login", "signup", "account", "accounts", "cdn", "docs", "blog", "crm",
 })
 
 
@@ -39,8 +39,10 @@ def center_domain(subdomain: str) -> str:
 
 
 def public_hosts() -> set[str]:
+    """CRM ommaviy qismi (lending, ro'yxatdan o'tish, /admin/). yurtora.uz ning o'zida endi kompaniya
+    lendingi (alohida xizmat, Caddy orqali), CRM ning ommaviy qismi crm.yurtora.uz da."""
     root = settings.ROOT_DOMAIN
-    return {root, f"www.{root}"}
+    return {root, f"www.{root}", f"crm.{root}"}
 
 
 def is_public_schema() -> bool:

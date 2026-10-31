@@ -4,6 +4,7 @@ import html
 
 import pytest
 from django.core.cache import cache
+from django.core.exceptions import ValidationError
 from django.db import connection
 from django.test import Client
 from django_tenants.utils import schema_context
@@ -15,7 +16,7 @@ from apps.notifications import routing, services
 from apps.notifications.models import TelegramContact
 from apps.students.models import Student
 from apps.tenants.models import Center
-from apps.tenants.services import create_center
+from apps.tenants.services import create_center, validate_subdomain
 
 pytestmark = pytest.mark.django_db
 PASSWORD = "Strong-Pass-2026!"
@@ -79,6 +80,15 @@ def test_public_site_and_center_routing(public_client):
     assert landing.status_code == 200 and "Markazni ulash" in landing.content.decode()
     assert public_client.get("/login/").status_code == 404  # CRM faqat markaz manzilida
     assert Client(HTTP_HOST="testcenter.localhost").get("/login/").status_code == 200
+
+
+def test_crm_public_site_lives_on_crm_subdomain():
+    # yurtora.uz da kompaniya lendingi; CRM ommaviy qismi (lending, /admin/) crm.<root> da
+    crm = Client(HTTP_HOST="crm.localhost")
+    assert crm.get("/").status_code == 200 and "Markazni ulash" in crm.get("/").content.decode()
+    assert Client(HTTP_HOST="localhost").get("/_tls/check/", {"domain": "crm.localhost"}).status_code == 200
+    with pytest.raises(ValidationError):
+        validate_subdomain("crm")  # markaz bu nomni egallay olmaydi
 
 
 def test_unknown_center_address_is_404_not_someone_elses_data():
