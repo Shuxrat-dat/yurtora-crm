@@ -170,3 +170,87 @@ class OwnerDigestLog(models.Model):
     class Meta:
         verbose_name = "Egasi kunlik hisoboti"
         verbose_name_plural = "Egasi kunlik hisobotlari"
+
+
+class PlatformSettings(models.Model):
+    """Yurtora egasi sozlamalari (bitta yozuv): to'lov rekvizitlari va obuna tugagandan keyingi kunlar."""
+
+    payment_details = models.TextField(
+        blank=True, verbose_name="To'lov rekvizitlari",
+        help_text="Karta raqami, bank hisobi, qabul qiluvchi. Obuna tugagan oynada va to'lov sahifasida ko'rinadi.",
+    )
+    support_contact = models.CharField(max_length=120, blank=True, verbose_name="Bog'lanish (telefon / Telegram)")
+    grace_days = models.PositiveSmallIntegerField(
+        default=0, verbose_name="Imtiyozli kunlar",
+        help_text="Muddat tugagach markaz to'liq ishlaydigan kunlar (0 — ertasi kuni darhol o'chadi).",
+    )
+    read_only_days = models.PositiveSmallIntegerField(
+        default=0, verbose_name="Faqat ko'rish kunlari",
+        help_text="Imtiyozli kunlardan keyin faqat ko'rish rejimi kunlari (0 — darhol o'chadi).",
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Platforma sozlamalari"
+        verbose_name_plural = "Platforma sozlamalari"
+
+    def __str__(self):
+        return "Platforma sozlamalari"
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+        from django.core.cache import cache
+
+        cache.delete(PLATFORM_SETTINGS_CACHE_KEY)
+
+    @classmethod
+    def get(cls):
+        """Har so'rovda obuna holati hisoblanadi: sozlamalar keshda (saqlanganda tozalanadi)."""
+        from django.core.cache import cache
+        from django_tenants.utils import get_public_schema_name, schema_context
+
+        obj = cache.get(PLATFORM_SETTINGS_CACHE_KEY)
+        if obj is None:
+            with schema_context(get_public_schema_name()):
+                obj = cls.objects.filter(pk=1).first() or cls(pk=1)
+            cache.set(PLATFORM_SETTINGS_CACHE_KEY, obj, 300)
+        return obj
+
+
+PLATFORM_SETTINGS_CACHE_KEY = "yurtora:platform-settings"
+
+
+class PaymentRequest(models.Model):
+    """Markaz direktori "to'ladim" deb yuborgan so'rov: egasi pulni ko'rib tasdiqlaydi -> muddat uzayadi."""
+
+    class Status(models.TextChoices):
+        NEW = "new", "Tasdiq kutilmoqda"
+        CONFIRMED = "confirmed", "Tasdiqlandi"
+        REJECTED = "rejected", "Rad etildi"
+
+    center = models.ForeignKey(Center, on_delete=models.CASCADE, related_name="payment_requests", verbose_name="Markaz")
+    plan = models.ForeignKey(Plan, on_delete=models.PROTECT, related_name="+", verbose_name="Tarif")
+    months = models.PositiveSmallIntegerField(verbose_name="Oylar soni")
+    amount = models.PositiveBigIntegerField(verbose_name="Summa (so'm)")
+    payer_name = models.CharField(max_length=120, verbose_name="To'lovchi")
+    payer_phone = models.CharField(max_length=30, verbose_name="Telefon")
+    note = models.CharField(max_length=255, blank=True, verbose_name="Izoh (chek raqami, karta oxiri...)")
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.NEW, db_index=True, verbose_name="Holati")
+    payment = models.OneToOneField(
+        SubscriptionPayment, null=True, blank=True, on_delete=models.SET_NULL, related_name="request", verbose_name="To'lov"
+    )
+    reject_reason = models.CharField(max_length=255, blank=True, verbose_name="Rad etish sababi")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Yuborilgan vaqti")
+    resolved_at = models.DateTimeField(null=True, blank=True, verbose_name="Ko'rib chiqilgan vaqti")
+
+    class Meta:
+        verbose_name = "To'lov so'rovi"
+        verbose_name_plural = "To'lov so'rovlari"
+        ordering = ["-created_at"]
+        constraints = [
+            models.CheckConstraint(condition=models.Q(months__gte=1), name="payment_request_months_positive"),
+        ]
+
+    def __str__(self):
+        return f"{self.center.name}: {self.plan.name}, {self.months} oy"

@@ -1,0 +1,35 @@
+{% extends "panel/base.html" %}
+{% load mv %}
+{% block title %}Tariflar{% endblock %}
+{% block content %}
+<div class="yp-grid2">
+    <section class="yp-card">
+        <h1 class="text-xl font-bold mb-3">Tariflar</h1>
+        <table class="yp-table">
+            <thead><tr><th>Nomi</th><th>Narx/oy</th><th>Limit</th><th>Markazlar</th><th></th></tr></thead>
+            <tbody>
+            {% for p in plans %}
+            <tr>
+                <td class="font-semibold">{{ p.name }} {% if p.is_default %}<span class="mv-pill mv-pill--cyan">sinov uchun</span>{% endif %}{% if not p.is_active %}<span class="mv-pill">sotuvda emas</span>{% endif %}</td>
+                <td>{{ p.price_month|som }}</td>
+                <td class="text-sm">{{ p.max_students|default:"∞" }} o'q. / {{ p.max_users|default:"∞" }} xod.</td>
+                <td>{{ p.center_count }}</td>
+                <td class="text-right"><a href="{% url 'panel:plan_edit' p.pk %}" class="mv-btn">Tahrirlash</a></td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </section>
+    <section class="yp-card">
+        <h2 class="text-lg font-bold mb-3">{% if plan %}«{{ plan.name }}» ni tahrirlash{% else %}Yangi tarif{% endif %}</h2>
+        <form method="post" class="yp-form">
+            {% csrf_token %}
+            {% for field in form %}
+            <label>{% if field.field.widget.input_type == 'checkbox' %}<span class="flex items-center gap-2">{{ field }} {{ field.label }}</span>{% else %}{{ field.label }} {{ field }}{% endif %}{% for e in field.errors %}<span class="yp-err">{{ e }}</span>{% endfor %}</label>
+            {% endfor %}
+            <p class="yp-help">Bo'sh limit — cheklovsiz. Narx o'zgarsa, keyingi to'lovlardan amal qiladi.</p>
+            <div class="flex gap-2"><button class="mv-btn mv-btn--primary">Saqlash</button>{% if plan %}<a href="{% url 'panel:plans' %}" class="mv-btn">Yangi tarif</a>{% endif %}</div>
+        </form>
+    </section>
+</div>
+{% endblock %}

@@ -1,0 +1,133 @@
+{% load static mv %}<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Obunani to'lash — Yurtora CRM</title>
+    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}?v={{ ASSET_VERSION }}">
+    <link rel="stylesheet" href="{% static 'css/app.css' %}?v={{ ASSET_VERSION }}">
+    <style>
+        body { background: var(--mv-bg); }
+        .yt-pay { max-width: 46rem; margin: 0 auto; padding: 1.25rem 1rem 3rem; }
+        .yt-pay-card { background: var(--mv-card); border: 1px solid var(--mv-border); border-radius: 1rem; box-shadow: var(--mv-shadow); padding: 1.25rem; }
+        .yt-pay-options { display: grid; gap: .5rem; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); }
+        .yt-pay-options label { display: block; cursor: pointer; position: relative; }
+        .yt-pay-options input { position: absolute; opacity: 0; pointer-events: none; }
+        .yt-pay-opt { display: block; padding: .75rem .9rem; border: 1.5px solid var(--mv-border); border-radius: .75rem; }
+        .yt-pay-options input:checked + .yt-pay-opt { border-color: var(--mv-primary); background: var(--mv-primary-50); }
+        .yt-pay-options input:focus-visible + .yt-pay-opt { outline: 2px solid var(--mv-primary); outline-offset: 2px; }
+        .yt-pay-total { display: flex; align-items: baseline; justify-content: space-between; padding: .9rem 1rem; border-radius: .75rem; background: var(--mv-bg); }
+        .yt-pay-details { white-space: pre-wrap; font: 600 .95rem/1.5 ui-monospace, Consolas, monospace; padding: .8rem 1rem; border-radius: .75rem; background: var(--mv-primary-50); }
+    </style>
+</head>
+<body>
+<main class="yt-pay space-y-4">
+    <div class="flex items-center justify-between gap-3">
+        <div>
+            <p class="text-sm text-slate-500">{{ center.name }}</p>
+            <h1 class="text-2xl font-bold">Obunani to'lash</h1>
+        </div>
+        {% if sub.full_access %}<a href="{% url 'billing:overview' %}" class="mv-btn">← Obuna</a>{% endif %}
+    </div>
+
+    {% for message in messages %}
+    <div class="mv-alert mv-alert--{% if message.tags == 'error' %}error{% else %}success{% endif %}" role="status">{{ message }}</div>
+    {% endfor %}
+
+    <section class="yt-pay-card">
+        <p class="text-sm text-slate-500">Holat</p>
+        <p class="text-lg font-bold">{% if sub.full_access %}{{ sub.label }}{% else %}Obuna tugagan{% endif %}{% if sub.access_until %}{% if sub.full_access %} — {{ sub.access_until|date:"d.m.Y" }} gacha{% else %} — {{ sub.access_until|date:"d.m.Y" }} da tugagan{% endif %}{% endif %}</p>
+        <p class="text-sm text-slate-600 mt-1">Oldindan to'lov joriy muddat oxiridan qo'shiladi: kunlar yo'qolmaydi. Ma'lumotlar har doim saqlanadi.</p>
+    </section>
+
+    {% if pending %}
+    <section class="yt-pay-card">
+        <h2 class="text-lg font-bold">So'rov ko'rib chiqilmoqda</h2>
+        <p class="text-slate-600 mt-1">{{ pending.plan.name }}, {{ pending.months }} oy — <b>{{ pending.amount|som }} so'm</b>, {{ pending.created_at|date:"d.m.Y H:i" }} da yuborilgan. Yurtora tasdiqlashi bilan obuna avtomatik uzayadi.</p>
+        {% if support %}<p class="text-sm text-slate-500 mt-2">Tezlashtirish uchun: {{ support }}</p>{% endif %}
+    </section>
+    {% else %}
+    <form method="post" class="yt-pay-card space-y-5" id="pay-form">
+        {% csrf_token %}
+        {% if form.non_field_errors %}<div class="mv-alert mv-alert--error" role="alert">{{ form.non_field_errors.0 }}</div>{% endif %}
+
+        <fieldset>
+            <legend class="font-bold mb-2">1. Tarif</legend>
+            <div class="yt-pay-options">
+                {% for plan in plans %}
+                <label>
+                    <input type="radio" name="plan" value="{{ plan.pk }}" data-price="{{ plan.price_month }}" {% if form.plan.value|stringformat:"s" == plan.pk|stringformat:"s" %}checked{% endif %} required>
+                    <span class="yt-pay-opt">
+                        <b>{{ plan.name }}</b>{% if plan.pk == center.plan_id %} <span class="mv-pill mv-pill--ok">joriy</span>{% endif %}<br>
+                        <span class="text-lg font-bold">{{ plan.price_month|som }}</span> <span class="text-sm text-slate-500">so'm / oy</span><br>
+                        <span class="text-xs text-slate-500">O'quvchilar: {{ plan.max_students|default:"cheklovsiz" }}</span>
+                    </span>
+                </label>
+                {% endfor %}
+            </div>
+        </fieldset>
+
+        <fieldset>
+            <legend class="font-bold mb-2">2. Muddat</legend>
+            <div class="yt-pay-options" style="grid-template-columns: repeat(4, minmax(0, 1fr))">
+                {% for value, label in form.months.field.choices %}
+                <label>
+                    <input type="radio" name="months" value="{{ value }}" {% if form.months.value|stringformat:"s" == value|stringformat:"s" %}checked{% endif %} required>
+                    <span class="yt-pay-opt text-center font-bold">{{ label }}</span>
+                </label>
+                {% endfor %}
+            </div>
+        </fieldset>
+
+        <div class="yt-pay-total"><span class="font-semibold">To'lov summasi</span><span class="text-2xl font-bold" data-pay-total>—</span></div>
+
+        <div>
+            <p class="font-bold mb-2">3. Shu rekvizitlarga to'lang</p>
+            {% if payment_details %}<div class="yt-pay-details">{{ payment_details }}</div>{% else %}<p class="text-slate-600">Rekvizitlarni Yurtora'dan so'rang{% if support %}: {{ support }}{% endif %}.</p>{% endif %}
+        </div>
+
+        <div class="space-y-3">
+            <p class="font-bold">4. To'lov qilganingizni bildiring</p>
+            <div class="grid sm:grid-cols-2 gap-3">
+                <label class="block text-sm font-semibold">{{ form.payer_name.label }} {{ form.payer_name }}{% for e in form.payer_name.errors %}<span class="text-red-700 text-xs">{{ e }}</span>{% endfor %}</label>
+                <label class="block text-sm font-semibold">{{ form.payer_phone.label }} {{ form.payer_phone }}{% for e in form.payer_phone.errors %}<span class="text-red-700 text-xs">{{ e }}</span>{% endfor %}</label>
+            </div>
+            <label class="block text-sm font-semibold">{{ form.note.label }} {{ form.note }}</label>
+        </div>
+
+        <button type="submit" class="mv-btn mv-btn--primary w-full justify-center" style="min-height:3rem">To'lov qildim — tasdiqlashga yuborish</button>
+        {% if support %}<p class="text-sm text-slate-500 text-center">Savollar: {{ support }}</p>{% endif %}
+    </form>
+    {% endif %}
+
+    {% if requests %}
+    <section class="yt-pay-card">
+        <h2 class="font-bold mb-2">Oxirgi so'rovlar</h2>
+        <ul class="text-sm divide-y divide-slate-100">
+            {% for r in requests %}
+            <li class="py-2 flex justify-between gap-3"><span>{{ r.created_at|date:"d.m.Y" }} · {{ r.plan.name }}, {{ r.months }} oy · {{ r.amount|som }} so'm</span><span class="font-semibold">{{ r.get_status_display }}{% if r.reject_reason %}: {{ r.reject_reason }}{% endif %}</span></li>
+            {% endfor %}
+        </ul>
+    </section>
+    {% endif %}
+
+    <form method="post" action="{% url 'accounts:logout' %}" class="text-center">{% csrf_token %}<button type="submit" class="text-sm text-slate-500">Chiqish</button></form>
+</main>
+<script>
+    (function () {
+        var form = document.getElementById('pay-form');
+        if (!form) return;
+        var out = form.querySelector('[data-pay-total]');
+        function update() {
+            var plan = form.querySelector('input[name="plan"]:checked');
+            var months = form.querySelector('input[name="months"]:checked');
+            if (!plan || !months) { out.textContent = '—'; return; }
+            var total = Number(plan.dataset.price) * Number(months.value);
+            out.textContent = total.toLocaleString('ru-RU').replace(/ |,/g, ' ') + " so'm";
+        }
+        form.addEventListener('change', update);
+        update();
+    })();
+</script>
+</body>
+</html>

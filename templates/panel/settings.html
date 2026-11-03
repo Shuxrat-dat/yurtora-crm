@@ -1,0 +1,15 @@
+{% extends "panel/base.html" %}
+{% block title %}Sozlamalar{% endblock %}
+{% block content %}
+<section class="yp-card" style="max-width: 40rem">
+    <h1 class="text-xl font-bold mb-1">Sozlamalar</h1>
+    <p class="text-sm text-slate-500 mb-3">Rekvizitlar va aloqa markazlarning «Obuna tugadi» oynasida va to'lov sahifasida ko'rinadi.</p>
+    <form method="post" class="yp-form">
+        {% csrf_token %}
+        {% for field in form %}
+        <label>{{ field.label }} {{ field }}{% if field.help_text %}<span class="yp-help">{{ field.help_text }}</span>{% endif %}{% for e in field.errors %}<span class="yp-err">{{ e }}</span>{% endfor %}</label>
+        {% endfor %}
+        <button class="mv-btn mv-btn--primary">Saqlash</button>
+    </form>
+</section>
+{% endblock %}

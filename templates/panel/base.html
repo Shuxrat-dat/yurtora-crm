@@ -1,0 +1,55 @@
+{% load static %}<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Panel{% endblock %} — Yurtora egasi</title>
+    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}?v={{ ASSET_VERSION }}">
+    <link rel="stylesheet" href="{% static 'css/app.css' %}?v={{ ASSET_VERSION }}">
+    <style>
+        body { background: var(--mv-bg); }
+        .yp-top { position: sticky; top: 0; z-index: 10; background: var(--mv-card); border-bottom: 1px solid var(--mv-border); }
+        .yp-top-in { max-width: 72rem; margin: 0 auto; padding: .7rem 1rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+        .yp-brand { font-weight: 800; letter-spacing: .02em; color: var(--mv-ink); }
+        .yp-nav { display: flex; gap: .25rem; flex-wrap: wrap; }
+        .yp-nav a { padding: .45rem .8rem; border-radius: .6rem; font-weight: 600; color: var(--mv-ink-3); }
+        .yp-nav a.is-active, .yp-nav a:hover { background: var(--mv-primary-50); color: var(--mv-primary-dark); }
+        .yp-main { max-width: 72rem; margin: 0 auto; padding: 1.25rem 1rem 3rem; display: grid; gap: 1rem; }
+        .yp-card { background: var(--mv-card); border: 1px solid var(--mv-border); border-radius: 1rem; box-shadow: var(--mv-shadow); padding: 1.1rem 1.2rem; }
+        .yp-kpis { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); }
+        .yp-kpi { display: block; background: var(--mv-card); border: 1px solid var(--mv-border); border-radius: .9rem; padding: .85rem 1rem; }
+        .yp-kpi small { display: block; color: var(--mv-muted); font-weight: 600; font-size: .78rem; }
+        .yp-kpi b { font-size: 1.5rem; }
+        .yp-table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+        .yp-table th { text-align: left; font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; color: var(--mv-muted); padding: .5rem .6rem; border-bottom: 1px solid var(--mv-border); }
+        .yp-table td { padding: .65rem .6rem; border-bottom: 1px solid var(--mv-border); vertical-align: middle; }
+        .yp-table tr:last-child td { border-bottom: 0; }
+        .yp-grid2 { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr)); }
+        .yp-form { display: grid; gap: .65rem; }
+        .yp-form label { display: grid; gap: .25rem; font-size: .85rem; font-weight: 600; }
+        .yp-help { font-size: .75rem; color: var(--mv-muted); font-weight: 400; }
+        .yp-err { font-size: .78rem; color: var(--mv-danger-text); font-weight: 600; }
+    </style>
+</head>
+<body>
+<header class="yp-top">
+    <div class="yp-top-in">
+        <span class="yp-brand">YURTORA · panel</span>
+        <nav class="yp-nav" aria-label="Panel bo'limlari">
+            <a href="{% url 'panel:centers' %}" class="{% if nav == 'centers' %}is-active{% endif %}">Markazlar</a>
+            <a href="{% url 'panel:requests' %}" class="{% if nav == 'requests' %}is-active{% endif %}">To'lov so'rovlari</a>
+            <a href="{% url 'panel:plans' %}" class="{% if nav == 'plans' %}is-active{% endif %}">Tariflar</a>
+            <a href="{% url 'panel:settings' %}" class="{% if nav == 'settings' %}is-active{% endif %}">Sozlamalar</a>
+            <a href="{% url 'admin:index' %}">Django admin</a>
+        </nav>
+        <span class="ml-auto text-sm text-slate-500">{{ request.user.get_username }}</span>
+    </div>
+</header>
+<main class="yp-main">
+    {% for message in messages %}
+    <div class="mv-alert mv-alert--{% if message.tags == 'error' %}error{% else %}success{% endif %}" role="status">{{ message }}</div>
+    {% endfor %}
+    {% block content %}{% endblock %}
+</main>
+</body>
+</html>

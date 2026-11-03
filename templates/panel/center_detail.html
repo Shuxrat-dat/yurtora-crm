@@ -1,0 +1,106 @@
+{% extends "panel/base.html" %}
+{% load mv %}
+{% block title %}{{ center.name }}{% endblock %}
+{% block content %}
+<a href="{% url 'panel:centers' %}" class="text-sm text-slate-500">← Markazlar</a>
+
+<section class="yp-card">
+    <div class="flex flex-wrap items-start justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold">{{ center.name }}</h1>
+            <p class="text-sm text-slate-500">{% if domain %}<a href="https://{{ domain }}" target="_blank" rel="noopener">{{ domain }}</a>{% else %}{{ center.schema_name }}{% endif %} · ro'yxatdan o'tgan {{ center.created_at|date:"d.m.Y" }}</p>
+            <p class="text-sm mt-1">{{ center.contact_name }} {{ center.contact_phone }}</p>
+        </div>
+        <div class="text-right">
+            <span class="mv-pill mv-pill--{{ tone }}">{% if sub.manual_block %}To'xtatilgan (qo'lda){% else %}{{ sub.label }}{% endif %}</span>
+            <p class="text-lg font-bold mt-1">{% if sub.access_until %}{{ sub.access_until|date:"d.m.Y" }} gacha{% else %}Muddatsiz{% endif %}</p>
+            {% if sub.days_left is not None %}<p class="text-sm {% if sub.days_left < 0 %}text-red-700{% else %}text-slate-500{% endif %}">{% if sub.days_left >= 0 %}{{ sub.days_left|add:1 }} kun qoldi{% else %}muddat o'tgan{% endif %}</p>{% endif %}
+        </div>
+    </div>
+    <div class="yp-kpis mt-4">
+        <div class="yp-kpi"><small>Tarif</small><b>{{ center.plan.name|default:"—" }}</b></div>
+        <div class="yp-kpi"><small>Narx (so'm/oy)</small><b>{% if center.plan %}{{ center.plan.price_month|som }}{% else %}—{% endif %}</b></div>
+        <div class="yp-kpi"><small>Faol o'quvchilar</small><b>{{ usage.students }}{% if center.plan.max_students %} / {{ center.plan.max_students }}{% endif %}</b></div>
+        <div class="yp-kpi"><small>Foydalanuvchilar</small><b>{{ usage.users }}{% if center.plan.max_users %} / {{ center.plan.max_users }}{% endif %}</b></div>
+    </div>
+</section>
+
+{% for r in requests %}{% if r.status == 'new' %}
+<section class="yp-card" style="border-color: var(--mv-gold)">
+    <h2 class="text-lg font-bold">To'lov so'rovi kutilmoqda</h2>
+    <p class="mt-1">{{ r.plan.name }}, {{ r.months }} oy — <b>{{ r.amount|som }} so'm</b> · {{ r.payer_name }}, {{ r.payer_phone }} · {{ r.created_at|date:"d.m.Y H:i" }}</p>
+    {% if r.note %}<p class="text-sm text-slate-600">Izoh: {{ r.note }}</p>{% endif %}
+    <div class="flex flex-wrap gap-2 mt-3">
+        <form method="post">{% csrf_token %}<input type="hidden" name="action" value="confirm"><input type="hidden" name="request_id" value="{{ r.pk }}"><button class="mv-btn mv-btn--primary">Pul tushdi — tasdiqlash</button></form>
+        <form method="post" class="flex gap-2">{% csrf_token %}<input type="hidden" name="action" value="reject"><input type="hidden" name="request_id" value="{{ r.pk }}"><input name="reason" placeholder="Rad etish sababi" class="px-3 py-2 border border-slate-300 rounded-lg"><button class="mv-btn">Rad etish</button></form>
+    </div>
+</section>
+{% endif %}{% endfor %}
+
+<div class="yp-grid2">
+    <section class="yp-card">
+        <h2 class="text-lg font-bold mb-1">Tarif berish / uzaytirish</h2>
+        <p class="text-sm text-slate-500 mb-3">Muddat joriy muddat oxiridan (yoki bugundan) qo'shiladi. Markaz o'chgan bo'lsa, darhol yoqiladi.</p>
+        <form method="post" class="yp-form">
+            {% csrf_token %}<input type="hidden" name="action" value="grant">
+            {% for field in grant_form %}
+            <label>{{ field.label }} {{ field }}{% if field.help_text %}<span class="yp-help">{{ field.help_text }}</span>{% endif %}{% for e in field.errors %}<span class="yp-err">{{ e }}</span>{% endfor %}</label>
+            {% endfor %}
+            <button class="mv-btn mv-btn--primary">Saqlash va uzaytirish</button>
+        </form>
+    </section>
+
+    <div class="grid gap-4 content-start">
+        <section class="yp-card">
+            <h2 class="text-lg font-bold mb-2">Tarifni almashtirish</h2>
+            <form method="post" class="yp-form">{% csrf_token %}<input type="hidden" name="action" value="plan">{{ plan_form.plan }}<button class="mv-btn">Almashtirish (muddat o'zgarmaydi)</button></form>
+        </section>
+        <section class="yp-card">
+            <h2 class="text-lg font-bold mb-2">Sinov davri</h2>
+            <form method="post" class="yp-form">{% csrf_token %}<input type="hidden" name="action" value="trial">{{ trial_form.trial_ends_at }}{% for e in trial_form.trial_ends_at.errors %}<span class="yp-err">{{ e }}</span>{% endfor %}<button class="mv-btn">Sinov sanasini saqlash</button></form>
+        </section>
+        <section class="yp-card">
+            <h2 class="text-lg font-bold mb-2">O'chirish</h2>
+            <div class="flex flex-wrap gap-2">
+                <form method="post" data-confirm="Obunani hozir tugatasizmi? Markazda «Obuna tugadi» oynasi chiqadi.">{% csrf_token %}<input type="hidden" name="action" value="end"><button class="mv-btn">Obunani hozir tugatish</button></form>
+                {% if center.is_active %}
+                <form method="post" data-confirm="Markazni to'liq to'xtatasizmi? To'lov sahifasi ham yopiladi.">{% csrf_token %}<input type="hidden" name="action" value="block"><button class="mv-btn" style="color: var(--mv-danger-text)">Markazni to'xtatish</button></form>
+                {% else %}
+                <form method="post">{% csrf_token %}<input type="hidden" name="action" value="unblock"><button class="mv-btn mv-btn--primary">Markazni qayta yoqish</button></form>
+                {% endif %}
+            </div>
+            <p class="text-xs text-slate-500 mt-2">«Obunani tugatish» — markaz to'lov qilib, siz tasdiqlagach qayta yoqiladi. «To'xtatish» — faqat siz qayta yoqasiz, to'lov sahifasi ham yopiq. Ma'lumotlar ikkala holatda ham saqlanadi.</p>
+        </section>
+    </div>
+</div>
+
+<section class="yp-card">
+    <h2 class="text-lg font-bold mb-2">To'lovlar tarixi</h2>
+    <div class="overflow-x-auto">
+        <table class="yp-table">
+            <thead><tr><th>Sana</th><th>Tarif</th><th>Davr</th><th>Summa</th><th>Usul</th><th>Kim</th><th>Izoh</th></tr></thead>
+            <tbody>
+            {% for p in payments %}
+            <tr><td>{{ p.created_at|date:"d.m.Y" }}</td><td>{{ p.plan.name }}, {{ p.months }} oy</td><td>{{ p.period_start|date:"d.m.Y" }} – {{ p.period_end|date:"d.m.Y" }}</td><td>{{ p.amount|som }}</td><td>{{ p.get_method_display }}</td><td>{{ p.created_by.get_username|default:"—" }}</td><td class="text-xs">{{ p.comment }}</td></tr>
+            {% empty %}
+            <tr><td colspan="7" class="text-slate-500">To'lov hali yo'q.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+{% if requests %}
+<section class="yp-card">
+    <h2 class="text-lg font-bold mb-2">To'lov so'rovlari</h2>
+    <ul class="text-sm divide-y divide-slate-100">
+        {% for r in requests %}<li class="py-2 flex justify-between gap-3"><span>{{ r.created_at|date:"d.m.Y" }} · {{ r.plan.name }}, {{ r.months }} oy · {{ r.amount|som }} so'm · {{ r.payer_name }}</span><span class="font-semibold">{{ r.get_status_display }}{% if r.reject_reason %}: {{ r.reject_reason }}{% endif %}</span></li>{% endfor %}
+    </ul>
+</section>
+{% endif %}
+<script>
+    document.querySelectorAll('form[data-confirm]').forEach(function (f) {
+        f.addEventListener('submit', function (e) { if (!window.confirm(f.dataset.confirm)) e.preventDefault(); });
+    });
+</script>
+{% endblock %}

@@ -7,6 +7,7 @@ from apps.tenants import views
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("panel/", include("apps.tenants.panel_urls", namespace="panel")),
     path("healthz/", views.healthz),
     path("_tls/check/", views.tls_check),
     path("", include("apps.tenants.urls", namespace="public")),

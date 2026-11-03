@@ -159,7 +159,7 @@ def subscription_banner(request):
     if sub.status == billing.TRIAL and days is not None and days <= 7:
         banner = ("info", f"Sinov davri: {days + 1} kun qoldi ({sub.access_until:%d.%m.%Y} gacha). Obunani oldindan to'lasangiz, sinov kunlari yo'qolmaydi.")
     elif sub.status == billing.ACTIVE and days is not None and days <= 5:
-        banner = ("info", f"Obuna {sub.access_until:%d.%m.%Y} da tugaydi ({days + 1} kun qoldi).")
+        banner = ("info", f"Obuna {sub.access_until:%d.%m.%Y} da tugaydi ({days + 1} kun qoldi). Muddat tugagach tizim o'chadi: oldindan to'lang (Obuna bo'limi).")
     elif sub.status == billing.GRACE:
         banner = ("warning", f"Obuna muddati {sub.access_until:%d.%m.%Y} da tugadi. {sub.read_only_from:%d.%m.%Y} dan faqat ko'rish rejimi yoqiladi.")
     elif sub.status == billing.READ_ONLY:

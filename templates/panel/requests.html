@@ -1,0 +1,36 @@
+{% extends "panel/base.html" %}
+{% load mv %}
+{% block title %}To'lov so'rovlari{% endblock %}
+{% block content %}
+<section class="yp-card">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+        <h1 class="text-xl font-bold">To'lov so'rovlari</h1>
+        <form method="get"><select name="status" onchange="this.form.submit()" class="px-3 py-2 border border-slate-300 rounded-lg">
+            <option value="" {% if not status %}selected{% endif %}>Hammasi</option>
+            {% for value, label in statuses %}<option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select></form>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="yp-table">
+            <thead><tr><th>Sana</th><th>Markaz</th><th>Tarif</th><th>Summa</th><th>To'lovchi</th><th>Holat</th><th></th></tr></thead>
+            <tbody>
+            {% for r in requests %}
+            <tr>
+                <td>{{ r.created_at|date:"d.m.Y H:i" }}</td>
+                <td><a href="{% url 'panel:center' r.center_id %}" class="font-semibold">{{ r.center.name }}</a></td>
+                <td>{{ r.plan.name }}, {{ r.months }} oy</td>
+                <td class="font-semibold">{{ r.amount|som }}</td>
+                <td>{{ r.payer_name }}<br><span class="text-xs text-slate-500">{{ r.payer_phone }}{% if r.note %} · {{ r.note }}{% endif %}</span></td>
+                <td>{{ r.get_status_display }}</td>
+                <td class="text-right whitespace-nowrap">{% if r.status == 'new' %}
+                    <form method="post" class="inline">{% csrf_token %}<input type="hidden" name="request_id" value="{{ r.pk }}"><button name="action" value="confirm" class="mv-btn mv-btn--primary">Tasdiqlash</button> <button name="action" value="reject" class="mv-btn">Rad etish</button></form>
+                {% endif %}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7" class="text-center text-slate-500 py-6">So'rov yo'q.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

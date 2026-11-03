@@ -15,8 +15,11 @@ TENANCY_QUERIES_PER_REQUEST = 3
 
 # Caddy va healthcheck ichki manzildan (web:8000) keladi: bu yo'llar har doim ommaviy qismda
 ALWAYS_PUBLIC_PATHS = ("/_tls/check/", "/healthz/")
-# Faqat ko'rish rejimida ham ruxsat: tizimga kirish/chiqish
-READ_ONLY_ALLOWED_PATHS = ("/login/", "/logout/")
+# Faqat ko'rish rejimida ham ruxsat: tizimga kirish/chiqish va obuna to'lovi so'rovi
+READ_ONLY_ALLOWED_PATHS = ("/login/", "/logout/", "/billing/pay/")
+# Obuna tugab markaz o'chganda ham ochiq: direktor kirib, to'lov so'rovini yubora olishi uchun
+EXPIRED_ALLOWED_PATHS = ("/login/", "/logout/", "/billing/pay/")
+EXPIRED_ALLOWED_PREFIXES = ("/static/",)
 SAFE_METHODS = ("GET", "HEAD", "OPTIONS")
 
 
@@ -33,10 +36,23 @@ class CenterMiddleware(TenantMainMiddleware):
         sub = billing.subscription(tenant)
         request.subscription = sub
         if sub.status == billing.BLOCKED:
-            # Markaz bloklangan (qo'lda yoki obuna muddati o'tgan): ma'lumotlar saqlanadi, kirish yo'q
+            # Obuna tugagan: kirish va to'lov sahifasi ochiq, qolgan hamma joyda tushuntirish oynasi.
+            # Egasi qo'lda to'xtatgan markazda hech narsa ochiq emas.
+            if not sub.manual_block and (
+                request.path in EXPIRED_ALLOWED_PATHS or request.path.startswith(EXPIRED_ALLOWED_PREFIXES)
+            ):
+                return None
+            from .models import PlatformSettings
+
+            platform = PlatformSettings.get()
             connection.set_schema_to_public()
             html = render_to_string(
-                "public/center_blocked.html", {"center": tenant, "sub": sub, "YURTORA_SUPPORT": settings.YURTORA_SUPPORT}
+                "public/center_blocked.html",
+                {
+                    "center": tenant, "sub": sub, "plan": tenant.plan,
+                    "payment_details": platform.payment_details,
+                    "YURTORA_SUPPORT": platform.support_contact or settings.YURTORA_SUPPORT,
+                },
             )
             return HttpResponse(html, status=403)
         if sub.status == billing.READ_ONLY and request.method not in SAFE_METHODS and request.path not in READ_ONLY_ALLOWED_PATHS:

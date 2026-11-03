@@ -1,0 +1,44 @@
+{% extends "panel/base.html" %}
+{% load mv %}
+{% block title %}Markazlar{% endblock %}
+{% block content %}
+<div class="yp-kpis">
+    <a class="yp-kpi" href="?"><small>Jami markazlar</small><b>{{ stats.total }}</b></a>
+    <a class="yp-kpi" href="?"><small>Ishlayapti</small><b>{{ stats.working }}</b></a>
+    <a class="yp-kpi" href="?status=expiring"><small>7 kunda tugaydi</small><b>{{ stats.expiring }}</b></a>
+    <a class="yp-kpi" href="?status=blocked"><small>O'chgan</small><b>{{ stats.off }}</b></a>
+    <a class="yp-kpi" href="{% url 'panel:requests' %}"><small>To'lov so'rovlari</small><b>{{ stats.pending }}</b></a>
+    <div class="yp-kpi"><small>Oylik daromad (faol)</small><b>{{ stats.mrr|som }}</b></div>
+</div>
+
+<section class="yp-card">
+    <form method="get" class="flex flex-wrap gap-2 mb-3">
+        <input type="search" name="q" value="{{ q }}" placeholder="Markaz nomi, manzil yoki telefon" class="px-3 py-2 border border-slate-300 rounded-lg flex-1 min-w-[14rem]">
+        <select name="status" class="px-3 py-2 border border-slate-300 rounded-lg">
+            <option value="">Barcha holatlar</option>
+            <option value="expiring" {% if status == 'expiring' %}selected{% endif %}>7 kunda tugaydi</option>
+            {% for value, label in statuses.items %}<option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+        <button class="mv-btn">Qidirish</button>
+    </form>
+    <div class="overflow-x-auto">
+        <table class="yp-table">
+            <thead><tr><th>Markaz</th><th>Tarif</th><th>Holat</th><th>Muddat</th><th>Aloqa</th><th></th></tr></thead>
+            <tbody>
+            {% for r in rows %}
+            <tr>
+                <td><a href="{% url 'panel:center' r.center.pk %}" class="font-semibold">{{ r.center.name }}</a><br><span class="text-xs text-slate-500">{{ r.center.schema_name }}.yurtora.uz</span></td>
+                <td>{{ r.center.plan.name|default:"—" }}{% if r.center.plan %}<br><span class="text-xs text-slate-500">{{ r.center.plan.price_month|som }} so'm/oy</span>{% endif %}</td>
+                <td><span class="mv-pill mv-pill--{{ r.tone }}">{% if r.sub.manual_block %}To'xtatilgan{% else %}{{ r.sub.label }}{% endif %}</span>{% if r.pending %}<br><span class="mv-pill mv-pill--gold mt-1">To'lov so'rovi</span>{% endif %}</td>
+                <td>{% if r.sub.access_until %}{{ r.sub.access_until|date:"d.m.Y" }}<br><span class="text-xs {% if r.sub.days_left < 0 %}text-red-700{% elif r.sub.days_left <= 7 %}text-amber-700{% else %}text-slate-500{% endif %}">{% if r.sub.days_left >= 0 %}{{ r.sub.days_left|add:1 }} kun qoldi{% else %}{{ r.sub.days_left|stringformat:"d"|slice:"1:" }} kun oldin tugagan{% endif %}</span>{% else %}cheklovsiz{% endif %}</td>
+                <td class="text-sm">{{ r.center.contact_name|default:"" }}<br>{{ r.center.contact_phone|default:"" }}</td>
+                <td class="text-right"><a href="{% url 'panel:center' r.center.pk %}" class="mv-btn">Boshqarish</a></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="text-center text-slate-500 py-6">Markaz topilmadi.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

@@ -39,6 +39,7 @@
     <section class="bg-white rounded-xl border border-slate-200 p-5">
         <h2 class="text-lg font-bold mb-2">Qanday to'lash mumkin</h2>
         <p class="text-slate-600">To'lov Yurtora orqali qabul qilinadi, muddat to'lov qayd etilgan zahoti uzayadi. Oldindan to'lov joriy muddatning oxiridan qo'shiladi, kunlar yo'qolmaydi.{% if support %} Bog'lanish: <strong>{{ support }}</strong>.{% endif %}</p>
+        <a href="{% url 'billing:pay' %}" class="mv-btn mv-btn--primary mt-3">Obunani to'lash / uzaytirish</a>
     </section>
 
     {% if plans %}

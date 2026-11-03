@@ -15,12 +15,20 @@ from apps.accounts.models import User
 from apps.students import importer
 from apps.students.models import Student
 from apps.tenants import billing
-from apps.tenants.models import Center, Plan, SubscriptionPayment
+from apps.tenants.models import Center, Plan, PlatformSettings, SubscriptionPayment
 from apps.tenants.services import active_center_schemas, create_center
 
 pytestmark = pytest.mark.django_db
 TODAY = timezone.localdate()
 PASSWORD = "Strong-Pass-2026!"
+# Bu fayldagi testlar bosqichli rejimni tekshiradi: 3 kun imtiyoz, 7 kun faqat ko'rish (egasi sozlamasi).
+# Standart sozlama (0/0) — muddat tugashi bilan darhol o'chirish: tests/test_owner_panel.py
+GRACE_DAYS, READ_ONLY_DAYS = 3, 7
+
+
+@pytest.fixture(autouse=True)
+def staged_expiry():
+    PlatformSettings(grace_days=GRACE_DAYS, read_only_days=READ_ONLY_DAYS).save()
 
 
 def set_center(**fields):
@@ -61,10 +69,10 @@ def text(response):
         (TODAY, None, billing.TRIAL),                      # oxirgi kun ham ruxsat
         (TODAY - timedelta(days=20), TODAY + timedelta(days=3), billing.ACTIVE),
         (TODAY - timedelta(days=1), None, billing.GRACE),
-        (TODAY - timedelta(days=billing.GRACE_DAYS), None, billing.GRACE),
-        (TODAY - timedelta(days=billing.GRACE_DAYS + 1), None, billing.READ_ONLY),
-        (TODAY - timedelta(days=billing.GRACE_DAYS + billing.READ_ONLY_DAYS), None, billing.READ_ONLY),
-        (TODAY - timedelta(days=billing.GRACE_DAYS + billing.READ_ONLY_DAYS + 1), None, billing.BLOCKED),
+        (TODAY - timedelta(days=GRACE_DAYS), None, billing.GRACE),
+        (TODAY - timedelta(days=GRACE_DAYS + 1), None, billing.READ_ONLY),
+        (TODAY - timedelta(days=GRACE_DAYS + READ_ONLY_DAYS), None, billing.READ_ONLY),
+        (TODAY - timedelta(days=GRACE_DAYS + READ_ONLY_DAYS + 1), None, billing.BLOCKED),
     ],
 )
 def test_subscription_status(trial, paid, expected):
@@ -130,7 +138,7 @@ def test_grace_keeps_full_access_with_warning(director_user):
 
 
 def test_read_only_allows_viewing_but_not_changes(director_user, password):
-    set_center(plan=Plan.objects.get(code="start"), trial_ends_at=TODAY - timedelta(days=billing.GRACE_DAYS + 2))
+    set_center(plan=Plan.objects.get(code="start"), trial_ends_at=TODAY - timedelta(days=GRACE_DAYS + 2))
     client = logged_in(director_user)
     assert client.get(reverse("students:student_list")).status_code == 200
     response = client.post(reverse("students:student_create"), student_form("A", "B", "+998901234567"))
@@ -145,7 +153,7 @@ def test_read_only_allows_viewing_but_not_changes(director_user, password):
 def test_expired_center_is_blocked(director_user):
     set_center(plan=Plan.objects.get(code="start"), trial_ends_at=TODAY - timedelta(days=60))
     response = logged_in(director_user).get(reverse("accounts:home"))
-    assert response.status_code == 403 and "obuna muddati" in text(response)
+    assert response.status_code == 403 and "Obuna muddati tugadi" in text(response)
 
 
 # --- banner and billing page ------------------------------------------------------
@@ -229,7 +237,7 @@ def test_bot_skips_centers_without_full_access():
     c = create_center(name="Ilm", subdomain="ilm", director_username="d", director_password=PASSWORD)
     assert "ilm" in active_center_schemas()
     with schema_context("public"):
-        Center.objects.filter(pk=c.pk).update(trial_ends_at=TODAY - timedelta(days=billing.GRACE_DAYS + 2))
+        Center.objects.filter(pk=c.pk).update(trial_ends_at=TODAY - timedelta(days=GRACE_DAYS + 2))
     assert "ilm" not in active_center_schemas()
 
 
